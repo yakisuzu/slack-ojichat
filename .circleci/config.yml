@@ -1,0 +1,69 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/openjdk:11
+    steps:
+      - checkout
+      - restore_cache:
+          key: sbt-cache
+      - run: sbt update clean assembly
+      - save_cache:
+          key: sbt-cache
+          paths:
+            - "~/.ivy2/cache"
+            - "~/.sbt"
+            - "~/.m2"
+            - project/target
+      - run: cp target/slack-ojichat.jar ops/slack-ojichat.jar
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ops
+  heroku_deploy:
+    # environment:
+      # HEROKU_API_KEY: ""
+      # SLACK_TOKEN: ""
+    docker:
+      - image: circleci/node:lts
+    steps:
+      - checkout
+      - restore_cache:
+          key: npm-cache
+      - run:
+          name: heroku init
+          command: |
+            npm install -g heroku
+            heroku login
+            heroku container:login
+      - save_cache:
+          key: npm-cache
+          paths:
+            - node_modules
+      - setup_remote_docker:
+        docker_layer_caching: true
+      - attach_workspace:
+          at: .
+
+      - run:
+          name: docker build
+          command: docker build -t slack-ojichat:$CIRCLE_SHA1 ops
+      - run:
+          name: heroku push
+          command: |
+            heroku container:push slack-ojichat:$CIRCLE_SHA1
+            heroku container:release slack-ojichat:$CIRCLE_SHA1
+workflows:
+  version: 2
+  build_and_deploy:
+    jobs:
+      - build:
+          filters:
+            branches:
+              only: /.*/
+      - heroku_deploy:
+          requires:
+            - build
+          filters:
+            branches:
+              only: master
