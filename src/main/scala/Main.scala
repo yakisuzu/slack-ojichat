@@ -12,6 +12,7 @@ object Main extends App {
   val client = SlackRtmClient(slackToken)
   val ojichanId = client.state.self.id
 
+  println("よ〜〜〜し、おじさんがんばっちゃうゾ")
   client.onMessage { message =>
     val mentionedOjichan = SlackUtil.extractMentionedIds(message.text).contains(ojichanId)
 

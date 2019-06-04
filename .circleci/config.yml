@@ -36,7 +36,6 @@ jobs:
           name: heroku init
           command: |
             sudo npm install -g heroku
-            heroku maintenance:on --app ${HEROKU_APP_NAME}
             echo ${HEROKU_API_KEY} | docker login --username=_ --password-stdin registry.heroku.com
       - save_cache:
           key: npm-cache
@@ -53,11 +52,13 @@ jobs:
           command: docker build -t registry.heroku.com/${HEROKU_APP_NAME}/worker ops
       - run:
           name: heroku push
+          command: docker push registry.heroku.com/${HEROKU_APP_NAME}/worker
+      - run:
+          name: heroku release
           command: |
-            docker push registry.heroku.com/${HEROKU_APP_NAME}/worker
+            heroku maintenance:on --app ${HEROKU_APP_NAME}
             heroku container:release worker --app ${HEROKU_APP_NAME}
-
-      - run: heroku maintenance:off --app ${HEROKU_APP_NAME}
+            heroku maintenance:off --app ${HEROKU_APP_NAME}
 workflows:
   version: 2
   build_and_deploy:
