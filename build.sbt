@@ -11,4 +11,4 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-stream" % "2.5.23",
 )
 
-assemblyOutputPath in assembly := file(s"target/${name.value}.jar")
+assemblyOutputPath in assembly := file(s"ops/${name.value}.jar")

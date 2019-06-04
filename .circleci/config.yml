@@ -15,7 +15,6 @@ jobs:
             - "~/.sbt"
             - "~/.m2"
             - project/target
-      - run: cp target/slack-ojichat.jar ops/slack-ojichat.jar
       - persist_to_workspace:
           root: .
           paths:
