@@ -4,7 +4,7 @@ RUN apt-get update
 RUN apt-get install golang-go git -y
 
 RUN go get -u github.com/greymd/ojichat
-ENV PATH $PATH:~/go/bin
+ENV PATH $PATH:/root/go/bin
 
 ADD slack-ojichat.jar slack-ojichat.jar
 CMD ["java", "-jar", "slack-ojichat.jar"]
