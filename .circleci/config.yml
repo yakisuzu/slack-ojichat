@@ -55,7 +55,6 @@ jobs:
           name: heroku push
           command: |
             docker push registry.heroku.com/${HEROKU_APP_NAME}/worker
-            heroku container:push worker --app ${HEROKU_APP_NAME}
             heroku container:release worker --app ${HEROKU_APP_NAME}
 
       - run: heroku maintenance:off --app ${HEROKU_APP_NAME}
