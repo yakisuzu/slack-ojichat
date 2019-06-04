@@ -22,7 +22,7 @@ jobs:
             - ops
   heroku_deploy:
     environment:
-      # HEROKU_API_KEY: "in build(circleci) setting"
+      # HEROKU_API_KEY: "in deploy(circleci) setting"
       # SLACK_TOKEN: "in running(heroku) setting"
     docker:
       - image: circleci/node:lts
@@ -33,7 +33,7 @@ jobs:
       - run:
           name: heroku init
           command: |
-            npm install -g heroku
+            sudo npm install -g heroku
             heroku container:login
       - save_cache:
           key: npm-cache
