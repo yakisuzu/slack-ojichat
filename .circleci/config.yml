@@ -37,7 +37,7 @@ jobs:
           command: |
             sudo npm install -g heroku
             heroku maintenance:on --app ${HEROKU_APP_NAME}
-            echo ${HEROKU_API_KEY} | docker login --username=_ registry.heroku.com
+            echo ${HEROKU_API_KEY} | docker login --username=_ --password-stdin registry.heroku.com
       - save_cache:
           key: npm-cache
           paths:
