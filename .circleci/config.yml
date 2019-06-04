@@ -37,11 +37,12 @@ jobs:
           command: |
             sudo npm install -g heroku
             heroku maintenance:on --app ${HEROKU_APP_NAME}
-            docker login --username=_ --password=${HEROKU_API_KEY} registry.heroku.com
+            echo ${HEROKU_API_KEY} | docker login --username=_ registry.heroku.com
       - save_cache:
           key: npm-cache
           paths:
             - node_modules
+            - /usr/local/lib/node_modules
       - setup_remote_docker:
           docker_layer_caching: true
       - attach_workspace:
@@ -49,7 +50,7 @@ jobs:
 
       - run:
           name: docker build
-          command: docker build -t ${HEROKU_APP_NAME}:${CIRCLE_SHA1} ops
+          command: docker build -t registry.heroku.com/${HEROKU_APP_NAME}/worker ops
       - run:
           name: heroku push
           command: |
