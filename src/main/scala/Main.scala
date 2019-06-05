@@ -15,6 +15,8 @@ object Main extends App {
 
   // かまってくれた時
   rtmService.mentionedMessage { (user, _) =>
-    ojichatService.getTalk(user.map(_.name)).unsafeRunSync()
+    ojichatService.getTalk(user.flatMap(_.real_name)).unsafeRunSync()
   }
+
+  println("ojisan end")
 }
