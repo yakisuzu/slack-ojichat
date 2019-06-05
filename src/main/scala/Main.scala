@@ -13,9 +13,9 @@ object Main extends App {
 
   println("よ〜〜〜し、オジサンがんばっちゃうゾ")
 
-  rtmService.mentionedMessage { message =>
+  rtmService.mentionedMessage { (user, _) =>
     ojichatService.getTalk {
-      rtmService.getUserName(message.user)
+      user.map(_.name)
     }
   }
 }

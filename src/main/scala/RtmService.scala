@@ -1,19 +1,19 @@
 import akka.actor.ActorRef
 import slack.SlackUtil
-import slack.models.Message
+import slack.models.{Message, User}
 import slack.rtm.SlackRtmClient
 
 class RtmService(val client: SlackRtmClient) {
   val ojisanId: String = client.state.self.id
 
-  def getUserName(userId: String): Option[String] =
-    client.state.getUserById(userId).map(_.name)
+  def getUser(userId: String): Option[User] =
+    client.state.getUserById(userId)
 
-  def mentionedMessage(makeMessage: Message => String): ActorRef =
+  def mentionedMessage(makeMessage: (Option[User], Message) => String): ActorRef =
     client.onMessage { message =>
       val mentioned = SlackUtil.extractMentionedIds(message.text).contains(ojisanId)
       if (mentioned) {
-        client.sendMessage(message.channel, makeMessage(message))
+        client.sendMessage(message.channel, makeMessage(getUser(message.user), message))
       }
     }
 }
