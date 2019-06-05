@@ -1,4 +1,4 @@
-import cats.effect.{Async, IO}
+import cats.effect.{Async, IO, SyncIO}
 import slack.SlackUtil
 import slack.models.{Message, User}
 import slack.rtm.SlackRtmClient
@@ -21,16 +21,18 @@ class RtmService(val client: SlackRtmClient) {
     client.sendMessage(channel, m)
   }
 
-  def mentionedMessage(makeMessage: (Option[User], Message) => String): IO[Unit] =
-    for {
-      message <- IO(onMessage().unsafeRunSync())
-      _ <- debug(message)
-      _ <- SlackUtil.extractMentionedIds(message.text) match {
-        case ids if ids.contains(ojisanId) => sendMessage(
-          message.channel,
-          makeMessage(getUser(message.user), message)
-        )
-        case _ => IO()
-      }
-    } yield ()
+  def mentionedMessage(makeMessage: (Option[User], Message) => String): SyncIO[Unit] =
+    onMessage().runAsync {
+      case Right(message) => for {
+        _ <- debug(message)
+        _ <- SlackUtil.extractMentionedIds(message.text) match {
+          case ids if ids.contains(ojisanId) => sendMessage(
+            message.channel,
+            makeMessage(getUser(message.user), message)
+          )
+          case _ => IO()
+        }
+      } yield ()
+      case Left(_) => IO()
+    }
 }
