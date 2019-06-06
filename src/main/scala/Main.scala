@@ -1,14 +1,8 @@
-import akka.actor.ActorSystem
-import slack.rtm.SlackRtmClient
-
 object Main extends App {
   lazy val ojisanName = getEnvRequire("HEROKU_APP_NAME")
   lazy val ojisanToken = getEnvRequire("SLACK_TOKEN")
 
-  implicit val ojisanSystem: ActorSystem = ActorSystem(ojisanName)
-  //  implicit val ec: ExecutionContextExecutor = ojisanSystem.dispatcher
-
-  val rtmService = new RtmService(SlackRtmClient(ojisanToken)(ojisanSystem))
+  val rtmService = RtmService.init(ojisanToken, ojisanName)
   val ojichatService = new OjichatService()
 
   // FIXME websocketのconnectionつながったらね
@@ -16,10 +10,13 @@ object Main extends App {
   // val channel_random = "C40DE1SRW"
   // rtmService.sendMessage(channel_random, "よ〜〜〜し、オジサンがんばっちゃうゾ").unsafeRunSync()
 
-  // かまってくれた時
+  // オジサンはかまってくれると嬉しい
   rtmService.mentionedMessage { (user, _) =>
     ojichatService.getTalk(user.flatMap(_.real_name)).unsafeRunSync()
   }
+
+  // オジサンはかまいたい
+  rtmService.kimagureReaction()
 
   println("ojisan end")
 

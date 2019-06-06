@@ -1,10 +1,15 @@
+import akka.actor.ActorSystem
 import cats.effect.IO
 import slack.SlackUtil
 import slack.models.{Message, UserProfile}
 import slack.rtm.SlackRtmClient
 
-class RtmService(val client: SlackRtmClient) {
-  val ojisanId: String = client.state.self.id
+import scala.util.Random
+
+class RtmService(val client: SlackRtmClient, val system: ActorSystem) {
+  lazy val ojisanId: String = client.state.self.id
+  lazy val rand: Random = new Random()
+  lazy val emojis = client.apiClient.listEmojis()(system)
 
   def debug(up: Option[UserProfile]): IO[Unit] = IO {
     val s = up.map(u => s"{ first_name: ${u.first_name}, last_name: ${u.last_name}, real_name: ${u.real_name} }")
@@ -44,4 +49,30 @@ class RtmService(val client: SlackRtmClient) {
         }
       } yield ()
     }.unsafeRunSync()
+
+  def kimagureReaction(): Unit =
+    onMessage { message =>
+      (message.user, rand.nextInt(100)) match {
+        case (`ojisanId`, _) => IO() // 自分の発言にはリアクションしない
+        case (_, n) if n < 50 => IO {
+          client.apiClient.addReactionToMessage(choiceEmoji(), message.channel, message.ts)(system)
+        }
+        case _ => IO()
+      }
+    }.unsafeRunSync()
+
+  def choiceEmoji(): String = {
+    val i = rand.nextInt(emojis.keys.size)
+    emojis.keys.zipWithIndex.find(_._2 == i).map(_._1).get
+  }
+
+}
+
+object RtmService {
+  def init(ojisanToken: String, ojisanName: String): RtmService = {
+    lazy implicit val ojisanSystem: ActorSystem = ActorSystem(ojisanName)
+    // implicit val ec: ExecutionContextExecutor = ojisanSystem.dispatcher
+
+    new RtmService(SlackRtmClient(ojisanToken)(ojisanSystem), ojisanSystem)
+  }
 }
