@@ -1,15 +1,16 @@
-import akka.actor.ActorSystem
+import akka.actor.{ActorRef, ActorSystem}
 import cats.effect.IO
 import slack.SlackUtil
 import slack.models.{Message, UserProfile}
 import slack.rtm.SlackRtmClient
 
+import scala.concurrent.Future
 import scala.util.Random
 
 class RtmService(val client: SlackRtmClient, val system: ActorSystem) {
   lazy val ojisanId: String = client.state.self.id
   lazy val rand: Random = new Random()
-  lazy val emojis = client.apiClient.listEmojis()(system)
+  lazy val emojis: Map[String, String] = client.apiClient.listEmojis()(system)
 
   def debug(up: Option[UserProfile]): IO[Unit] = IO {
     val s = up.map(u => s"{ first_name: ${u.first_name}, last_name: ${u.last_name}, real_name: ${u.real_name} }")
@@ -23,7 +24,13 @@ class RtmService(val client: SlackRtmClient, val system: ActorSystem) {
   def getUser(userId: String): Option[UserProfile] =
     client.state.getUserById(userId).flatMap(_.profile)
 
-  def onMessage(cb: Message => IO[Unit]): IO[Unit] = IO {
+  def addReactionToMessage(emoji: String, m: Message): IO[Unit] = IO {
+    client.apiClient.addReactionToMessage(emoji, m.channel, m.ts)(system) match {
+      case _ => () // 結果はどうでもいい
+    }
+  }
+
+  def onMessage(cb: Message => IO[Unit]): IO[ActorRef] = IO {
     client.onMessage(m => cb(m).unsafeRunSync())
   }
 
@@ -31,11 +38,11 @@ class RtmService(val client: SlackRtmClient, val system: ActorSystem) {
   //    client.onMessage(m => cb(Right(m)))
   //  }
 
-  def sendMessage(channel: String, m: String): IO[Unit] = IO {
+  def sendMessage(channel: String, m: String): IO[Future[Long]] = IO {
     client.sendMessage(channel, m)
   }
 
-  def mentionedMessage(makeMessage: (Option[UserProfile], Message) => String): Unit =
+  def mentionedMessage(makeMessage: (Option[UserProfile], Message) => String): ActorRef =
     onMessage { message =>
       for {
         _ <- debug(getUser(message.user))
@@ -45,19 +52,17 @@ class RtmService(val client: SlackRtmClient, val system: ActorSystem) {
             message.channel,
             makeMessage(getUser(message.user), message)
           )
-          case _ => IO()
+          case _ => IO((): Unit)
         }
       } yield ()
     }.unsafeRunSync()
 
-  def kimagureReaction(): Unit =
+  def kimagureReaction(): ActorRef =
     onMessage { message =>
       (message.user, rand.nextInt(100)) match {
-        case (`ojisanId`, _) => IO() // 自分の発言にはリアクションしない
-        case (_, n) if n < 50 => IO {
-          client.apiClient.addReactionToMessage(choiceEmoji(), message.channel, message.ts)(system)
-        }
-        case _ => IO()
+        case (`ojisanId`, _) => IO((): Unit) // 自分の発言にはリアクションしない
+        case (_, n) if n < 50 => addReactionToMessage(choiceEmoji(), message)
+        case _ => IO((): Unit)
       }
     }.unsafeRunSync()
 
