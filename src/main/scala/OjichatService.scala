@@ -4,6 +4,9 @@ import scala.sys.process.Process
 
 class OjichatService() {
   def getTalk(name: Option[String]): IO[String] = IO {
-    Process(s"ojichat ${name.getOrElse("")}").!!
+    name match {
+      case Some(n) => Process(s"ojichat '$n'").!!
+      case _ => Process(s"ojichat").!!
+    }
   }
 }
