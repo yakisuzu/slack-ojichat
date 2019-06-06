@@ -2,12 +2,13 @@ import akka.actor.ActorSystem
 import slack.rtm.SlackRtmClient
 
 object Main extends App {
-  implicit val system: ActorSystem = ActorSystem("slack-ojichat")
-  //  implicit val ec: ExecutionContextExecutor = system.dispatcher
+  lazy val ojisanName = getEnvRequire("HEROKU_APP_NAME")
+  lazy val ojisanToken = getEnvRequire("SLACK_TOKEN")
 
-  val slackToken = sys.env.getOrElse("SLACK_TOKEN", "")
-  val rtmService = new RtmService(SlackRtmClient(slackToken)(system))
+  implicit val ojisanSystem: ActorSystem = ActorSystem(ojisanName)
+  //  implicit val ec: ExecutionContextExecutor = ojisanSystem.dispatcher
 
+  val rtmService = new RtmService(SlackRtmClient(ojisanToken)(ojisanSystem))
   val ojichatService = new OjichatService()
 
   // FIXME websocketのconnectionつながったらね
@@ -21,4 +22,10 @@ object Main extends App {
   }
 
   println("ojisan end")
+
+  def getEnvRequire(key: String): String =
+    sys.env.get(key) match {
+      case Some(token) => token
+      case _ => throw new IllegalArgumentException(s"${key}がなくてオジサンさびしいヨ")
+    }
 }
