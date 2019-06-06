@@ -25,6 +25,7 @@
     - `SLACK_TOKEN` の登録  
     `Setting > Config Vars` に `SLACK_TOKEN` を登録する  
     slackのAPPから `Bots` を登録し、 `API Token` を取得する  
+    - `HEROKU_APP_NAME` の登録  
 
 ### 4. CircleCIの設定
   - ビルド時の環境変数  
