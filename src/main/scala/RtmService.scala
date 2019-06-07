@@ -10,18 +10,7 @@ import scala.util.Random
 class RtmService(val client: SlackRtmClient)(implicit val system: ActorSystem) {
   private val rand: Random = new Random()
   private lazy val ojisanId: String = client.state.self.id
-  private lazy val emojis = client.apiClient.listEmojis().keys
-
-  def debug(up: Option[UserProfile]): IO[Unit] = IO {
-    up match {
-      case Some(u) => println(s"{ first_name: ${u.first_name.getOrElse("")}, last_name: ${u.last_name.getOrElse("")}, real_name: ${u.real_name.getOrElse("")} }")
-      case _ => ()
-    }
-  }
-
-  def debug(m: Message): IO[Unit] = IO {
-    println(s"{ ts: ${m.ts}, channel: ${m.channel}, user: ${m.user}, text: ${m.text} }")
-  }
+  private lazy val emojis: Iterable[String] = client.apiClient.listEmojis().keys
 
   def getUser(userId: String): Option[UserProfile] =
     client.state.getUserById(userId).flatMap(_.profile)
@@ -45,31 +34,48 @@ class RtmService(val client: SlackRtmClient)(implicit val system: ActorSystem) {
 
   def mentionedMessage(makeMessage: (Option[UserProfile], Message) => String): ActorRef =
     onMessage { message =>
-      for {
-        _ <- debug(getUser(message.user))
-        _ <- debug(message)
-        _ <- SlackUtil.extractMentionedIds(message.text) match {
-          case ids if ids.contains(ojisanId) => sendMessage(
+      SlackUtil.extractMentionedIds(message.text) match {
+        case ids if ids.contains(ojisanId) =>
+          sendMessage(
             message.channel,
             makeMessage(getUser(message.user), message)
           )
-          case _ => IO((): Unit)
-        }
-      } yield ()
+          IO(())
+        case _ => IO(())
+      }
     }.unsafeRunSync()
 
   def kimagureReaction(): ActorRef =
     onMessage { message =>
       (message.user, rand.nextInt(100)) match {
-        case (`ojisanId`, _) => IO((): Unit) // 自分の発言にはリアクションしない
+        case (`ojisanId`, _) => IO(()) // 自分の発言にはリアクションしない
         case (_, n) if n < 50 => addReactionToMessage(choiceEmoji(), message)
-        case _ => IO((): Unit)
+        case _ => IO(())
       }
     }.unsafeRunSync()
 
   def choiceEmoji(): String = {
     val i = rand.nextInt(emojis.size)
     emojis.zipWithIndex.find(_._2 == i).map(_._1).get
+  }
+
+  def debugMessage(): ActorRef =
+    onMessage { message =>
+      for {
+        _ <- debug(getUser(message.user))
+        _ <- debug(message)
+      } yield ()
+    }.unsafeRunSync()
+
+  def debug(up: Option[UserProfile]): IO[Unit] = IO {
+    up match {
+      case Some(u) => println(s"{ first_name: ${u.first_name.getOrElse("")}, last_name: ${u.last_name.getOrElse("")}, real_name: ${u.real_name.getOrElse("")} }")
+      case _ => ()
+    }
+  }
+
+  def debug(m: Message): IO[Unit] = IO {
+    println(s"{ ts: ${m.ts}, channel: ${m.channel}, user: ${m.user}, text: ${m.text} }")
   }
 }
 

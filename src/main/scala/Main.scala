@@ -5,6 +5,8 @@ object Main extends App {
   val rtmService = RtmService.init(ojisanToken, ojisanName)
   val ojichatService = new OjichatService()
 
+  rtmService.debugMessage()
+
   // FIXME websocketのconnectionつながったらね
   // 起きた時
   // val channel_random = "C40DE1SRW"
