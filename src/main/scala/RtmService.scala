@@ -39,7 +39,8 @@ class RtmService(val client: SlackRtmClient)(implicit val system: ActorSystem) {
           sendMessage(
             message.channel,
             makeMessage(getUser(message.user), message)
-          )
+          ).unsafeRunSync()
+          // FIXME メッセージ送信時刻の保持
           IO(())
         case _ => IO(())
       }
