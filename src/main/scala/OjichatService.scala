@@ -1,6 +1,5 @@
 import cats.effect.IO
 
-import scala.language.postfixOps
 import scala.sys.process.Process
 
 class OjichatService() {

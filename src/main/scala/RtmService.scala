@@ -7,14 +7,16 @@ import slack.rtm.SlackRtmClient
 import scala.concurrent.Future
 import scala.util.Random
 
-class RtmService(val client: SlackRtmClient, val system: ActorSystem) {
-  lazy val ojisanId: String = client.state.self.id
-  lazy val rand: Random = new Random()
-  lazy val emojis: Map[String, String] = client.apiClient.listEmojis()(system)
+class RtmService(val client: SlackRtmClient)(implicit val system: ActorSystem) {
+  private val rand: Random = new Random()
+  private lazy val ojisanId: String = client.state.self.id
+  private lazy val emojis = client.apiClient.listEmojis().keys
 
   def debug(up: Option[UserProfile]): IO[Unit] = IO {
-    val s = up.map(u => s"{ first_name: ${u.first_name}, last_name: ${u.last_name}, real_name: ${u.real_name} }")
-    println(s)
+    up match {
+      case Some(u) => println(s"{ first_name: ${u.first_name.getOrElse("")}, last_name: ${u.last_name.getOrElse("")}, real_name: ${u.real_name.getOrElse("")} }")
+      case _ => ()
+    }
   }
 
   def debug(m: Message): IO[Unit] = IO {
@@ -25,9 +27,8 @@ class RtmService(val client: SlackRtmClient, val system: ActorSystem) {
     client.state.getUserById(userId).flatMap(_.profile)
 
   def addReactionToMessage(emoji: String, m: Message): IO[Unit] = IO {
-    client.apiClient.addReactionToMessage(emoji, m.channel, m.ts)(system) match {
-      case _ => () // 結果はどうでもいい
-    }
+    client.apiClient.addReactionToMessage(emoji, m.channel, m.ts)
+    ()
   }
 
   def onMessage(cb: Message => IO[Unit]): IO[ActorRef] = IO {
@@ -67,10 +68,9 @@ class RtmService(val client: SlackRtmClient, val system: ActorSystem) {
     }.unsafeRunSync()
 
   def choiceEmoji(): String = {
-    val i = rand.nextInt(emojis.keys.size)
-    emojis.keys.zipWithIndex.find(_._2 == i).map(_._1).get
+    val i = rand.nextInt(emojis.size)
+    emojis.zipWithIndex.find(_._2 == i).map(_._1).get
   }
-
 }
 
 object RtmService {
@@ -78,6 +78,6 @@ object RtmService {
     lazy implicit val ojisanSystem: ActorSystem = ActorSystem(ojisanName)
     // implicit val ec: ExecutionContextExecutor = ojisanSystem.dispatcher
 
-    new RtmService(SlackRtmClient(ojisanToken)(ojisanSystem), ojisanSystem)
+    new RtmService(SlackRtmClient(ojisanToken)(ojisanSystem))(ojisanSystem)
   }
 }
