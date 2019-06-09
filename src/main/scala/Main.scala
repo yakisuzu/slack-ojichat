@@ -2,19 +2,16 @@ object Main extends App {
   lazy val ojisanName = getEnvRequire("HEROKU_APP_NAME")
   lazy val ojisanToken = getEnvRequire("SLACK_TOKEN")
 
-  val rtmService = RtmService.init(ojisanToken, ojisanName)
+  val rtmService = RtmService(ojisanToken)
   val ojichatService = new OjichatService()
+
+  // rtmService.helloOjisan()
 
   rtmService.debugMessage()
 
-  // FIXME websocketのconnectionつながったらね
-  // 起きた時
-  // val channel_random = "C40DE1SRW"
-  // rtmService.sendMessage(channel_random, "よ〜〜〜し、オジサンがんばっちゃうゾ").unsafeRunSync()
-
   // オジサンはかまってくれると嬉しい
   rtmService.mentionedMessage { (user, _) =>
-    ojichatService.getTalk(user.flatMap(_.real_name)).unsafeRunSync()
+    ojichatService.getTalk(Option(user.getRealName)).unsafeRunSync()
   }
 
   // オジサンはかまいたい
