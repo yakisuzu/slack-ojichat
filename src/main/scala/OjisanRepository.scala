@@ -1,4 +1,5 @@
 import cats.effect.IO
+import com.typesafe.scalalogging.LazyLogging
 import com.ullink.slack.simpleslackapi.events.SlackMessagePosted
 import com.ullink.slack.simpleslackapi.impl.SlackSessionFactory
 import com.ullink.slack.simpleslackapi.replies.SlackMessageReply
@@ -6,7 +7,7 @@ import com.ullink.slack.simpleslackapi.{SlackChannel, SlackMessageHandle, SlackS
 
 import scala.collection.JavaConverters._
 
-class OjisanRepository(val session: SlackSession) {
+class OjisanRepository(val session: SlackSession) extends LazyLogging {
   private lazy val ojisanId: String = session.sessionPersona().getId
   lazy val emojis: Set[String] = session.listEmoji().getReply.getEmojis.keySet().asScala.toSet
 

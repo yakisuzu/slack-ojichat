@@ -1,10 +1,11 @@
 import cats.effect.IO
+import com.typesafe.scalalogging.LazyLogging
 import com.ullink.slack.simpleslackapi.SlackUser
 import com.ullink.slack.simpleslackapi.events.SlackMessagePosted
 
 import scala.util.Random
 
-class OjisanService(val repo: OjisanRepository) {
+class OjisanService(val repo: OjisanRepository) extends LazyLogging {
   private val rand: Random = new Random()
 
   def mentionedMessage(makeMessage: (SlackUser, SlackMessagePosted) => String): Unit =
@@ -42,11 +43,11 @@ class OjisanService(val repo: OjisanRepository) {
     }.unsafeRunSync()
 
   def debug(u: SlackUser): IO[Unit] = IO {
-    println(s"{ userId: ${u.getId}, userName: ${u.getUserName}, realName: ${u.getRealName}, userTitle: ${u.getUserTitle} }")
+    logger.debug(s"{ userId: ${u.getId}, userName: ${u.getUserName}, realName: ${u.getRealName}, userTitle: ${u.getUserTitle} }")
   }
 
   def debug(m: SlackMessagePosted): IO[Unit] = IO {
-    println(s"{ ts: ${m.getTimestamp}, channelId: ${m.getChannel.getId}, channelName: ${m.getChannel.getName}, messageContent: ${m.getMessageContent} }")
+    logger.debug(s"{ ts: ${m.getTimestamp}, channelId: ${m.getChannel.getId}, channelName: ${m.getChannel.getName}, messageContent: ${m.getMessageContent} }")
   }
 }
 

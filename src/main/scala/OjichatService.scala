@@ -1,8 +1,9 @@
 import cats.effect.IO
+import com.typesafe.scalalogging.LazyLogging
 
 import scala.sys.process.Process
 
-class OjichatService() {
+class OjichatService() extends LazyLogging {
   def makeCommand(args: String*): Seq[String] =
     Seq("ojichat") ++ args
 
