@@ -9,6 +9,7 @@ libraryDependencies ++= Seq(
   "org.typelevel" %% "cats-effect" % "1.3.1",
 )
 libraryDependencies ++= Seq(
+  "com.typesafe" % "config" % "1.3.4",
   "com.ullink.slack" % "simpleslackapi" % "1.2.0",
 )
 
