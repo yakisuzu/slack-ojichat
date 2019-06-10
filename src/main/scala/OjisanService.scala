@@ -9,31 +9,27 @@ class OjisanService(val repo: OjisanRepository) extends LazyLogging {
   private val rand: Random = new Random()
 
   def mentionedMessage(makeMessage: (SlackUser, SlackMessagePosted) => String): Unit =
-    repo
-      .onMessage { message =>
-        if (repo.hasOjisanMention(message)) {
-          repo
-            .sendMessage(
-              message.getChannel,
-              makeMessage(message.getSender, message)
-            )
-            .unsafeRunSync()
-          // FIXME メッセージ送信時刻の保持
-          IO(())
-        } else IO(())
-      }
-      .unsafeRunSync()
+    repo.onMessage { message =>
+      if (repo.hasOjisanMention(message)) {
+        repo
+          .sendMessage(
+            message.getChannel,
+            makeMessage(message.getSender, message)
+          )
+          .unsafeRunSync()
+        // FIXME メッセージ送信時刻の保持
+        IO(())
+      } else IO(())
+    } unsafeRunSync
 
   def kimagureReaction(): Unit =
-    repo
-      .onMessage { message =>
-        (repo.isOjiTalk(message), rand.nextInt(100)) match {
-          case (ok, _) if ok    => IO(()) // 自分の発言にはリアクションしない
-          case (_, n) if n < 50 => repo.addReactionToMessage(choiceEmoji(), message)
-          case _                => IO(())
-        }
+    repo.onMessage { message =>
+      (repo.isOjiTalk(message), rand.nextInt(100)) match {
+        case (ok, _) if ok    => IO(()) // 自分の発言にはリアクションしない
+        case (_, n) if n < 50 => repo.addReactionToMessage(choiceEmoji(), message)
+        case _                => IO(())
       }
-      .unsafeRunSync()
+    } unsafeRunSync
 
   def choiceEmoji(): String = {
     val i = rand.nextInt(repo.emojis.size)
@@ -41,14 +37,12 @@ class OjisanService(val repo: OjisanRepository) extends LazyLogging {
   }
 
   def debugMessage(): Unit =
-    repo
-      .onMessage { message =>
-        for {
-          _ <- debug(message.getSender)
-          _ <- debug(message)
-        } yield ()
-      }
-      .unsafeRunSync()
+    repo.onMessage { message =>
+      for {
+        _ <- debug(message.getSender)
+        _ <- debug(message)
+      } yield ()
+    } unsafeRunSync
 
   def debug(u: SlackUser): IO[Unit] = IO {
     logger.debug(
