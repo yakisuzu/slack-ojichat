@@ -12,21 +12,26 @@ class RtmService(val session: SlackSession) {
 
   private val rand: Random = new Random()
   private lazy val ojisanId: String = session.sessionPersona().getId
-  private lazy val emojis: Iterator[String] = session.listEmoji().getReply.getEmojis.keySet().asScala.toIterator
+  private lazy val emojis: Set[String] = session.listEmoji().getReply.getEmojis.keySet().asScala.toSet
 
   def getUser(userId: String): Option[SlackUser] =
     Option(session.findUserById(userId))
 
   def addReactionToMessage(emoji: String, m: SlackMessagePosted): IO[Unit] = IO {
-    session.addReactionToMessage(m.getChannel, m.getTimeStamp, emoji)
+    session.addReactionToMessage(m.getChannel, m.getTimestamp, emoji)
     ()
   }
 
-  def onMessage(cb: SlackMessagePosted => IO[Unit]): IO[Unit] = IO {
-    session.addMessagePostedListener {
-      (event: SlackMessagePosted, _) => cb(event).unsafeRunSync()
+  def onMessage(cb: (SlackMessagePosted, SlackSession) => IO[Unit]): IO[Unit] = IO {
+    session.addMessagePostedListener { (event, s) =>
+      cb(event, s).unsafeRunSync()
     }
   }
+
+  def onMessage(cb: SlackMessagePosted => IO[Unit]): IO[Unit] =
+    onMessage { (event, _) =>
+      cb(event)
+    }
 
   //  def onMessage(): IO[SlackMessagePosted] = Async[IO].async { cb =>
   //    session.addMessagePostedListener {
