@@ -10,7 +10,7 @@ class OjichatService() extends LazyLogging {
   def getTalk(name: Option[String]): IO[String] = IO {
     name match {
       case Some(n) => Process(makeCommand(n)) !!
-      case _ => Process(makeCommand()) !!
+      case _       => Process(makeCommand()) !!
     }
   }
 }

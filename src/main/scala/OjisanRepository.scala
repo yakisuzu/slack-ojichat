@@ -9,7 +9,7 @@ import scala.collection.JavaConverters._
 
 class OjisanRepository(val session: SlackSession) extends LazyLogging {
   private lazy val ojisanId: String = session.sessionPersona().getId
-  lazy val emojis: Set[String] = session.listEmoji().getReply.getEmojis.keySet().asScala.toSet
+  lazy val emojis: Set[String]      = session.listEmoji().getReply.getEmojis.keySet().asScala.toSet
 
   def hasOjisanMention(m: SlackMessagePosted): Boolean =
     m.getMessageContent.contains(ojisanId)
@@ -42,22 +42,24 @@ class OjisanRepository(val session: SlackSession) extends LazyLogging {
   //    }
   //  }
 
-  def sendMessage(channel: SlackChannel, m: String): IO[SlackMessageHandle[SlackMessageReply]] = IO {
-    session.sendMessage(channel, m)
-  }
-
-  def helloOjisan(): Unit = IO {
-    if (session.isConnected) {
-      sendMessage(
-        session.findChannelByName("random"),
-        "よ〜〜〜し、オジサンがんばっちゃうゾ",
-      )
-      ()
-    } else {
-      Thread.sleep(1000)
-      helloOjisan()
+  def sendMessage(channel: SlackChannel, m: String): IO[SlackMessageHandle[SlackMessageReply]] =
+    IO {
+      session.sendMessage(channel, m)
     }
-  }.unsafeRunSync()
+
+  def helloOjisan(): Unit =
+    IO {
+      if (session.isConnected) {
+        sendMessage(
+          session.findChannelByName("random"),
+          "よ〜〜〜し、オジサンがんばっちゃうゾ"
+        )
+        ()
+      } else {
+        Thread.sleep(1000)
+        helloOjisan()
+      }
+    }.unsafeRunSync()
 }
 
 object OjisanRepository {

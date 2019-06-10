@@ -1,11 +1,11 @@
 import com.typesafe.config.ConfigFactory
 
 object Main extends App {
-  lazy val conf = ConfigFactory.load()
-  lazy val ojisanName = conf.getString("app.name")
+  lazy val conf        = ConfigFactory.load()
+  lazy val ojisanName  = conf.getString("app.name")
   lazy val ojisanToken = conf.getString("app.slackToken")
 
-  val ojisanService = OjisanService(ojisanToken)
+  val ojisanService  = OjisanService(ojisanToken)
   val ojichatService = new OjichatService()
 
   {
