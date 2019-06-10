@@ -7,8 +7,14 @@ import com.ullink.slack.simpleslackapi.{SlackChannel, SlackMessageHandle, SlackS
 import scala.collection.JavaConverters._
 
 class OjisanRepository(val session: SlackSession) {
-  lazy val ojisanId: String = session.sessionPersona().getId
+  private lazy val ojisanId: String = session.sessionPersona().getId
   lazy val emojis: Set[String] = session.listEmoji().getReply.getEmojis.keySet().asScala.toSet
+
+  def hasOjisanMention(m: SlackMessagePosted): Boolean =
+    m.getMessageContent.contains(ojisanId)
+
+  def isOjiTalk(m: SlackMessagePosted): Boolean =
+    m.getSender.getId == ojisanId
 
   def getUser(userId: String): Option[SlackUser] =
     Option(session.findUserById(userId))
