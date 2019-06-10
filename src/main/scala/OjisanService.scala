@@ -9,7 +9,7 @@ class OjisanService(val repo: OjisanRepository) {
 
   def mentionedMessage(makeMessage: (SlackUser, SlackMessagePosted) => String): Unit =
     repo.onMessage { message =>
-      if (message.getMessageContent.contains(repo.ojisanId)) {
+      if (repo.hasOjisanMention(message)) {
         repo.sendMessage(
           message.getChannel,
           makeMessage(message.getSender, message),
@@ -21,8 +21,8 @@ class OjisanService(val repo: OjisanRepository) {
 
   def kimagureReaction(): Unit =
     repo.onMessage { message =>
-      (message.getSender.getId, rand.nextInt(100)) match {
-        case (id, _) if id == repo.ojisanId => IO(()) // 自分の発言にはリアクションしない
+      (repo.isOjiTalk(message), rand.nextInt(100)) match {
+        case (ok, _) if ok => IO(()) // 自分の発言にはリアクションしない
         case (_, n) if n < 50 => repo.addReactionToMessage(choiceEmoji(), message)
         case _ => IO(())
       }
