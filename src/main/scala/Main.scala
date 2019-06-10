@@ -5,21 +5,21 @@ object Main extends App {
   lazy val ojisanName = conf.getString("app.name")
   lazy val ojisanToken = conf.getString("app.slackToken")
 
-  val rtmService = RtmService(ojisanToken)
+  val ojisanService = OjisanService(ojisanToken)
   val ojichatService = new OjichatService()
 
   {
-    // rtmService.helloOjisan()
+    // ojisanService.helloOjisan()
 
-    rtmService.debugMessage()
+    ojisanService.debugMessage()
 
     // オジサンはかまってくれると嬉しい
-    rtmService.mentionedMessage { (user, _) =>
+    ojisanService.mentionedMessage { (user, _) =>
       ojichatService.getTalk(Option(user.getRealName)).unsafeRunSync()
     }
 
     // オジサンはかまいたい
-    rtmService.kimagureReaction()
+    ojisanService.kimagureReaction()
 
     println("ojisan end")
   }
