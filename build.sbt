@@ -5,12 +5,12 @@ version := "0.1"
 scalaVersion := "2.12.8"
 
 libraryDependencies ++= Seq(
-  "com.github.slack-scala-client" %% "slack-scala-client" % "0.2.6",
-  "com.typesafe.akka" %% "akka-actor" % "2.5.23",
-  "com.typesafe.akka" %% "akka-protobuf" % "2.5.23",
-  "com.typesafe.akka" %% "akka-stream" % "2.5.23",
-  "org.typelevel" %% "cats-core"   % "1.6.1",
+  "org.typelevel" %% "cats-core" % "1.6.1",
   "org.typelevel" %% "cats-effect" % "1.3.1",
+)
+libraryDependencies ++= Seq(
+  "com.typesafe" % "config" % "1.3.4",
+  "com.ullink.slack" % "simpleslackapi" % "1.2.0",
 )
 
 assemblyOutputPath in assembly := file(s"ops/${name.value}.jar")
@@ -27,7 +27,7 @@ scalacOptions ++= Seq(
   "-opt:l:inline", // Enable cross-method optimizations (note: inlining requires -opt-inline-from): l:method,inline.
   "-opt-inline-from", // Patterns for classfile names from which to allow inlining,
   // Warning Settings
-  "-Xfatal-warnings",  // Fail the compilation if there are any warnings.
+  "-Xfatal-warnings", // Fail the compilation if there are any warnings.
   "-Ywarn-dead-code", // Warn when dead code is identified.
   "-Ywarn-value-discard", // Warn when non-Unit expression results are unused.
   "-Ywarn-numeric-widen", // Warn when numerics are widened.
