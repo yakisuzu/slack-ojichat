@@ -1,16 +1,15 @@
 import com.typesafe.config.ConfigFactory
+import com.typesafe.scalalogging.LazyLogging
 
-object Main extends App {
-  lazy val conf = ConfigFactory.load()
-  lazy val ojisanName = conf.getString("app.name")
+object Main extends App with LazyLogging {
+  lazy val conf        = ConfigFactory.load()
+  lazy val ojisanName  = conf.getString("app.name")
   lazy val ojisanToken = conf.getString("app.slackToken")
 
-  val ojisanService = OjisanService(ojisanToken)
+  val ojisanService  = OjisanService(ojisanToken)
   val ojichatService = new OjichatService()
 
   {
-    // ojisanService.helloOjisan()
-
     ojisanService.debugMessage()
 
     // オジサンはかまってくれると嬉しい
@@ -21,6 +20,6 @@ object Main extends App {
     // オジサンはかまいたい
     ojisanService.kimagureReaction()
 
-    println("ojisan end")
+    logger.info("オジサン準備終わったヨ")
   }
 }
