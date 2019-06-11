@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import com.ullink.slack.simpleslackapi.events.SlackMessagePosted
 import com.ullink.slack.simpleslackapi.impl.SlackSessionFactory
 import com.ullink.slack.simpleslackapi.replies.SlackMessageReply
-import com.ullink.slack.simpleslackapi.{SlackChannel, SlackMessageHandle, SlackSession, SlackUser}
+import com.ullink.slack.simpleslackapi.{SlackChannel, SlackSession, SlackUser}
 
 import scala.collection.JavaConverters._
 import scala.concurrent.{Future, Promise}
@@ -56,9 +56,9 @@ trait OjisanRepository extends LazyLogging {
     }
   }
 
-  def sendMessage(channel: SlackChannel, m: String): IO[SlackMessageHandle[SlackMessageReply]] =
+  def sendMessage(channel: SlackChannel, m: String): IO[SlackMessageReply] =
     IO {
-      session.sendMessage(channel, m)
+      session.sendMessage(channel, m).getReply
     }
 
   def helloOjisan(): Unit =
