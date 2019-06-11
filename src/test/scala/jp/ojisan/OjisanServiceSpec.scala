@@ -15,43 +15,47 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
   describe("OjisanServiceSpec") {
     describe("should mentionedMessage") {
       it("ojisan宛ダヨ") {
-        val s = createService(
-          _onMessage = (cb: SlackMessagePosted => IO[Unit]) =>
-            cb(
-              createSlackMessagePosted(
-                "mentionedOjisan",
-                null,
-                createSackChannel("id", null),
-                null
-              )
-            ),
-          _hasOjisanMention = (_: SlackMessagePosted) => true,
-          _sendMessage = (c: SlackChannel, m: String) =>
-            IO {
-              c.getId should be("id")
-              m should be("sendContext")
-              createSlackMessageReply(ok = true, null)
-            }
-        )
+        val s = new OjisanService {
+          override val repo: OjisanRepository = createOjisanRepository(
+            _onMessage = (cb: SlackMessagePosted => IO[Unit]) =>
+              cb(
+                createSlackMessagePosted(
+                  "mentionedOjisan",
+                  null,
+                  createSackChannel("id", null),
+                  null
+                )
+              ),
+            _hasOjisanMention = (_: SlackMessagePosted) => true,
+            _sendMessage = (c: SlackChannel, m: String) =>
+              IO {
+                c.getId should be("id")
+                m should be("sendContext")
+                createSlackMessageReply(ok = true, null)
+              }
+          )
+        }
         s.mentionedMessage { (_, _) =>
           "sendContext"
         }
       }
 
       it("ojisan宛じゃないヨ") {
-        val s = createService(
-          _onMessage = (cb: SlackMessagePosted => IO[Unit]) =>
-            cb(
-              createSlackMessagePosted(
-                "ojisan...",
-                null,
-                createSackChannel(null, null),
-                null
-              )
-            ),
-          _hasOjisanMention = (_: SlackMessagePosted) => false,
-          _sendMessage = (_: SlackChannel, _: String) => throw new AssertionError("こないで〜〜")
-        )
+        val s = new OjisanService {
+          override val repo: OjisanRepository = createOjisanRepository(
+            _onMessage = (cb: SlackMessagePosted => IO[Unit]) =>
+              cb(
+                createSlackMessagePosted(
+                  "ojisan...",
+                  null,
+                  createSackChannel(null, null),
+                  null
+                )
+              ),
+            _hasOjisanMention = (_: SlackMessagePosted) => false,
+            _sendMessage = (_: SlackChannel, _: String) => throw new AssertionError("こないで〜〜")
+          )
+        }
         s.mentionedMessage { (_, _) =>
           "sendContext"
         }
@@ -77,27 +81,21 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
   private[this] def createSlackMessageReply(ok: Boolean, timestamp: String): SlackMessageReply =
     new SlackMessageReply(ok, null, 0, timestamp)
 
-  private[this] def createService(
+  private[this] def createOjisanRepository(
       _onMessage: (SlackMessagePosted => IO[Unit]) => IO[Unit],
       _hasOjisanMention: SlackMessagePosted => Boolean,
       _sendMessage: (SlackChannel, String) => IO[SlackMessageReply]
-  ): OjisanService =
-    new OjisanService {
-      override val repo: OjisanRepository = new OjisanRepository {
-        override val session: SlackSession =
-          null
+  ): OjisanRepository = new OjisanRepository {
+    override val session: SlackSession =
+      null
 
-        override def onMessage(cb: SlackMessagePosted => IO[Unit]): IO[Unit] =
-          _onMessage(cb)
+    override def onMessage(cb: SlackMessagePosted => IO[Unit]): IO[Unit] =
+      _onMessage(cb)
 
-        override def hasOjisanMention(m: SlackMessagePosted): Boolean =
-          _hasOjisanMention(m)
+    override def hasOjisanMention(m: SlackMessagePosted): Boolean =
+      _hasOjisanMention(m)
 
-        override def sendMessage(
-            channel: SlackChannel,
-            m: String
-        ): IO[SlackMessageReply] =
-          _sendMessage(channel, m)
-      }
-    }
+    override def sendMessage(channel: SlackChannel, m: String): IO[SlackMessageReply] =
+      _sendMessage(channel, m)
+  }
 }
