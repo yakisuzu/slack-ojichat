@@ -10,7 +10,8 @@ import com.ullink.slack.simpleslackapi.{SlackChannel, SlackMessageHandle, SlackS
 import scala.collection.JavaConverters._
 import scala.concurrent.{Future, Promise}
 
-class OjisanRepository(val session: SlackSession) extends LazyLogging {
+trait OjisanRepository extends LazyLogging {
+  val session: SlackSession
   private lazy val ojisanId: String = session.sessionPersona().getId
   lazy val emojis: Set[String]      = session.listEmoji().getReply.getEmojis.keySet().asScala.toSet
 
@@ -76,9 +77,13 @@ class OjisanRepository(val session: SlackSession) extends LazyLogging {
 }
 
 object OjisanRepository {
-  def apply(ojisanToken: String): OjisanRepository = {
-    val s = SlackSessionFactory.createWebSocketSlackSession(ojisanToken)
-    s.connect()
-    new OjisanRepository(s)
-  }
+  def apply(ojisanToken: String): OjisanRepository =
+    new OjisanRepository {
+      override val session: SlackSession =
+        SlackSessionFactory.createWebSocketSlackSession(ojisanToken) match {
+          case s =>
+            s.connect()
+            s
+        }
+    }
 }

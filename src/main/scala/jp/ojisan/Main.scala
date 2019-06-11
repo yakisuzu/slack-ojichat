@@ -9,7 +9,7 @@ object Main extends App with LazyLogging {
   lazy val ojisanToken = conf.getString("app.slackToken")
 
   val ojisanService  = OjisanService(ojisanToken)
-  val ojichatService = new OjichatService()
+  val ojichatService = OjichatService()
 
   {
     ojisanService.debugMessage()

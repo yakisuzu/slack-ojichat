@@ -7,7 +7,8 @@ import com.ullink.slack.simpleslackapi.events.SlackMessagePosted
 
 import scala.util.Random
 
-class OjisanService(val repo: OjisanRepository) extends LazyLogging {
+trait OjisanService extends LazyLogging {
+  val repo: OjisanRepository
   private val rand: Random = new Random()
 
   def mentionedMessage(makeMessage: (SlackUser, SlackMessagePosted) => String): Unit =
@@ -61,5 +62,7 @@ class OjisanService(val repo: OjisanRepository) extends LazyLogging {
 
 object OjisanService {
   def apply(ojisanToken: String): OjisanService =
-    new OjisanService(OjisanRepository(ojisanToken))
+    new OjisanService {
+      override val repo: OjisanRepository = OjisanRepository(ojisanToken)
+    }
 }
