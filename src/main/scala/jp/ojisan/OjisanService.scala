@@ -1,3 +1,5 @@
+package jp.ojisan
+
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import com.ullink.slack.simpleslackapi.SlackUser

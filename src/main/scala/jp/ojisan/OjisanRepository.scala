@@ -1,3 +1,5 @@
+package jp.ojisan
+
 import cats.effect.{Async, IO}
 import com.typesafe.scalalogging.LazyLogging
 import com.ullink.slack.simpleslackapi.events.SlackMessagePosted
