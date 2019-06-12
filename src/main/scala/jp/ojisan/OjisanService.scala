@@ -1,5 +1,7 @@
 package jp.ojisan
 
+import java.time.format.DateTimeFormatter
+
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import com.ullink.slack.simpleslackapi.SlackUser
@@ -36,9 +38,26 @@ trait OjisanService extends LazyLogging {
       }
     } unsafeRunSync
 
-  def mentionRequest(): Unit =
-    repo.onMessage { _ =>
-      IO(())
+  def mentionRequest(ojiTalk: String => String): Unit =
+    repo.onMessage { message =>
+      (repo.getOtherUserIds(message.contextToIds), message.contextToTime) match {
+        case (ids, _) if ids.isEmpty => IO(())
+        case (_, None)               => IO(())
+        case (ids, Some(time)) =>
+          IO {
+            repo
+              .sendMessage(
+                message.channel,
+                s"${time.format(DateTimeFormatter.ofPattern("HH:mm"))} になったら教えるネ"
+              )
+              .unsafeRunSync
+            // FIXME Timer
+            repo
+              .sendMessage(message.channel, ojiTalk(ids.mkString(" ")))
+              .unsafeRunSync
+            ()
+          }
+      }
     } unsafeRunSync
 
   def choiceEmoji(): String = {
