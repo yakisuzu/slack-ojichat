@@ -3,7 +3,6 @@ package jp.ojisan
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import com.ullink.slack.simpleslackapi.SlackUser
-import com.ullink.slack.simpleslackapi.events.SlackMessagePosted
 
 import scala.util.Random
 
@@ -11,13 +10,13 @@ trait OjisanService extends LazyLogging {
   val repo: OjisanRepository
   private val rand: Random = new Random()
 
-  def mentionedMessage(makeMessage: (SlackUser, SlackMessagePosted) => String): Unit =
+  def mentionedMessage(makeMessage: SlackUser => String): Unit =
     repo.onMessage { message =>
-      if (repo.hasOjisanMention(message)) {
+      if (message hasMention repo.ojisanId) {
         repo
           .sendMessage(
-            message.getChannel,
-            makeMessage(message.getSender, message)
+            message.channel,
+            makeMessage(message.sender)
           )
           .unsafeRunSync()
         // FIXME メッセージ送信時刻の保持
@@ -27,22 +26,28 @@ trait OjisanService extends LazyLogging {
 
   def kimagureReaction(): Unit =
     repo.onMessage { message =>
-      (repo.isOjiTalk(message), rand.nextInt(100)) match {
-        case (ok, _) if ok    => IO(()) // 自分の発言にはリアクションしない
-        case (_, n) if n < 50 => repo.addReactionToMessage(choiceEmoji(), message)
-        case _                => IO(())
+      (message isTalk repo.ojisanId, rand nextInt 100) match {
+        case (ok, _) if ok => IO(()) // 自分の発言にはリアクションしない
+        case (_, n) if n < 50 =>
+          repo.addReactionToMessage(message.channel, message.ts, choiceEmoji())
+        case _ => IO(())
       }
     } unsafeRunSync
 
+  def mentionRequest(): Unit =
+    repo.onMessage { _ =>
+      IO(())
+    } unsafeRunSync
+
   def choiceEmoji(): String = {
-    val i = rand.nextInt(repo.emojis.size)
+    val i = rand nextInt repo.emojis.size
     repo.emojis.zipWithIndex.find(_._2 == i).map(_._1).get
   }
 
   def debugMessage(): Unit =
     repo.onMessage { message =>
       for {
-        _ <- debug(message.getSender)
+        _ <- debug(message.sender)
         _ <- debug(message)
       } yield ()
     } unsafeRunSync
@@ -53,9 +58,9 @@ trait OjisanService extends LazyLogging {
     )
   }
 
-  def debug(m: SlackMessagePosted): IO[Unit] = IO {
+  def debug(m: MessageEntity): IO[Unit] = IO {
     logger.debug(
-      s"{ ts: ${m.getTimestamp}, channelId: ${m.getChannel.getId}, channelName: ${m.getChannel.getName}, messageContent: ${m.getMessageContent} }"
+      s"{ ts: ${m.ts}, channelId: ${m.channel.getId}, channelName: ${m.channel.getName}, content: ${m.context} }"
     )
   }
 }
