@@ -56,7 +56,58 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
       }
     }
 
-    describe("should kimagureReaction") { it("TODO") {} }
+    describe("should kimagureReaction") {
+      it("反応できた") {
+        val s = new OjisanService {
+          override def rand100: Int          = 10 // ok
+          override def choiceEmoji(): String = "emoji"
+          override val repo: OjisanRepository = OjisanRepositoryMock(
+            ojisanIdMock = "ojisanId",
+            onMessageMock = (cb: MessageEntity => IO[Unit]) =>
+              cb(
+                MessageEntityMock(
+                  channel = SlackChannelMock(id = "ch"),
+                  ts = "1234567"
+                )
+              ),
+            addReactionToMessageMock = (channel: SlackChannel, ts: String, emoji: String) =>
+              IO {
+                channel.getId should be("ch")
+                ts should be("1234567")
+                emoji should be("emoji")
+                ()
+              }
+          )
+        }
+        s.kimagureReaction()
+      }
+
+      it("反応しない") {
+        val sSelf = new OjisanService {
+          override def rand100: Int = 10 // ok
+          override val repo: OjisanRepository = OjisanRepositoryMock(
+            ojisanIdMock = "ojisanId",
+            onMessageMock = (cb: MessageEntity => IO[Unit]) =>
+              cb(
+                MessageEntityMock(
+                  user = SlackUserMock(id = "ojisanId")
+                )
+              ),
+            addReactionToMessageMock = (_, _, _) => throw new AssertionError("こないで〜〜〜")
+          )
+        }
+        sSelf.kimagureReaction()
+
+        val sNg = new OjisanService {
+          override def rand100: Int = 60 // ng
+          override val repo: OjisanRepository = OjisanRepositoryMock(
+            onMessageMock = (cb: MessageEntity => IO[Unit]) => cb(MessageEntityMock()),
+            addReactionToMessageMock = (_, _, _) => throw new AssertionError("こないで〜〜〜")
+          )
+        }
+        sNg.kimagureReaction()
+      }
+    }
 
     describe("should debugMessage") { it("TODO") {} }
   }

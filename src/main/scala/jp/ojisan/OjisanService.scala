@@ -9,6 +9,8 @@ import scala.util.Random
 trait OjisanService extends LazyLogging {
   val repo: OjisanRepository
   private val rand: Random = new Random()
+  def rand100: Int         = rand nextInt 100
+  def randN(n: Int): Int   = rand nextInt n
 
   def mentionedMessage(makeMessage: SlackUser => String): Unit =
     repo.onMessage { message =>
@@ -26,7 +28,7 @@ trait OjisanService extends LazyLogging {
 
   def kimagureReaction(): Unit =
     repo.onMessage { message =>
-      (message isTalk repo.ojisanId, rand nextInt 100) match {
+      (message isTalk repo.ojisanId, rand100) match {
         case (ok, _) if ok => IO(()) // 自分の発言にはリアクションしない
         case (_, n) if n < 50 =>
           repo.addReactionToMessage(message.channel, message.ts, choiceEmoji())
@@ -40,7 +42,7 @@ trait OjisanService extends LazyLogging {
     } unsafeRunSync
 
   def choiceEmoji(): String = {
-    val i = rand nextInt repo.emojis.size
+    val i = randN(repo.emojis.size)
     repo.emojis.zipWithIndex.find(_._2 == i).map(_._1).get
   }
 
