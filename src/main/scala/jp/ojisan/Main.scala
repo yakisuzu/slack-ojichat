@@ -15,7 +15,7 @@ object Main extends App with LazyLogging {
     ojisanService.debugMessage()
 
     // オジサンはかまってくれると嬉しい
-    ojisanService.mentionedMessage { (user, _) =>
+    ojisanService.mentionedMessage { user =>
       ojichatService.getTalk(Option(user.getRealName)).unsafeRunSync()
     }
 

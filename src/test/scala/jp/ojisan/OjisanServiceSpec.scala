@@ -2,7 +2,6 @@ package jp.ojisan
 
 import cats.effect.IO
 import com.ullink.slack.simpleslackapi.SlackChannel
-import com.ullink.slack.simpleslackapi.events.SlackMessagePosted
 import org.scalatest.Matchers._
 import org.scalatest.{BeforeAndAfterEach, FunSpec}
 
@@ -15,53 +14,100 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
     describe("should mentionedMessage") {
       it("ojisan宛ダヨ") {
         val s = new OjisanService {
-          override val repo: OjisanRepository = createOjisanRepository(
-            _onMessage = (cb: SlackMessagePosted => IO[Unit]) =>
+          override val repo: OjisanRepository = OjisanRepositoryMock(
+            ojisanIdMock = "ojisanId",
+            onMessageMock = (cb: MessageEntity => IO[Unit]) =>
               cb(
-                createSlackMessagePosted(
-                  "mentionedOjisan",
-                  null,
-                  createSlackChannel("id", null),
-                  null
+                MessageEntityMock(
+                  messageContent = "<@ojisanId> mentionedOjisan",
+                  channel = SlackChannelMock("id")
                 )
               ),
-            _hasOjisanMention = (_: SlackMessagePosted) => true,
-            _sendMessage = (c: SlackChannel, m: String) =>
+            sendMessageMock = (c: SlackChannel, m: String) =>
               IO {
                 c.getId should be("id")
                 m should be("sendContext")
-                createSlackMessageReply(ok = true, null)
+                SlackMessageReplyMock(ok = true)
               }
           )
         }
-        s.mentionedMessage { (_, _) =>
+        s.mentionedMessage { _ =>
           "sendContext"
         }
       }
 
       it("ojisan宛じゃないヨ") {
         val s = new OjisanService {
-          override val repo: OjisanRepository = createOjisanRepository(
-            _onMessage = (cb: SlackMessagePosted => IO[Unit]) =>
+          override val repo: OjisanRepository = OjisanRepositoryMock(
+            ojisanIdMock = "ojisanId",
+            onMessageMock = (cb: MessageEntity => IO[Unit]) =>
               cb(
-                createSlackMessagePosted(
-                  "ojisan...",
-                  null,
-                  createSlackChannel(null, null),
-                  null
+                MessageEntityMock(
+                  messageContent = "<@chigauOjisan> ojisan?",
+                  channel = SlackChannelMock()
                 )
               ),
-            _hasOjisanMention = (_: SlackMessagePosted) => false,
-            _sendMessage = (_: SlackChannel, _: String) => throw new AssertionError("こないで〜〜")
+            sendMessageMock = (_, _) => throw new AssertionError("こないで〜〜")
           )
         }
-        s.mentionedMessage { (_, _) =>
+        s.mentionedMessage { _ =>
           "sendContext"
         }
       }
     }
 
-    describe("should kimagureReaction") { it("TODO") {} }
+    describe("should kimagureReaction") {
+      it("反応できた") {
+        val s = new OjisanService {
+          override def rand100: Int          = 10 // ok
+          override def choiceEmoji(): String = "emoji"
+          override val repo: OjisanRepository = OjisanRepositoryMock(
+            ojisanIdMock = "ojisanId",
+            onMessageMock = (cb: MessageEntity => IO[Unit]) =>
+              cb(
+                MessageEntityMock(
+                  channel = SlackChannelMock(id = "ch"),
+                  ts = "1234567"
+                )
+              ),
+            addReactionToMessageMock = (channel: SlackChannel, ts: String, emoji: String) =>
+              IO {
+                channel.getId should be("ch")
+                ts should be("1234567")
+                emoji should be("emoji")
+                ()
+              }
+          )
+        }
+        s.kimagureReaction()
+      }
+
+      it("反応しない") {
+        val sSelf = new OjisanService {
+          override def rand100: Int = 10 // ok
+          override val repo: OjisanRepository = OjisanRepositoryMock(
+            ojisanIdMock = "ojisanId",
+            onMessageMock = (cb: MessageEntity => IO[Unit]) =>
+              cb(
+                MessageEntityMock(
+                  user = SlackUserMock(id = "ojisanId")
+                )
+              ),
+            addReactionToMessageMock = (_, _, _) => throw new AssertionError("こないで〜〜〜")
+          )
+        }
+        sSelf.kimagureReaction()
+
+        val sNg = new OjisanService {
+          override def rand100: Int = 60 // ng
+          override val repo: OjisanRepository = OjisanRepositoryMock(
+            onMessageMock = (cb: MessageEntity => IO[Unit]) => cb(MessageEntityMock()),
+            addReactionToMessageMock = (_, _, _) => throw new AssertionError("こないで〜〜〜")
+          )
+        }
+        sNg.kimagureReaction()
+      }
+    }
 
     describe("should debugMessage") { it("TODO") {} }
   }
