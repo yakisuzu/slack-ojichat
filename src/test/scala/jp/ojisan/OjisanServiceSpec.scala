@@ -2,7 +2,6 @@ package jp.ojisan
 
 import cats.effect.IO
 import com.ullink.slack.simpleslackapi.SlackChannel
-import com.ullink.slack.simpleslackapi.events.SlackMessagePosted
 import org.scalatest.Matchers._
 import org.scalatest.{BeforeAndAfterEach, FunSpec}
 
@@ -16,16 +15,16 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
       it("ojisan宛ダヨ") {
         val s = new OjisanService {
           override val repo: OjisanRepository = createOjisanRepository(
-            _onMessage = (cb: SlackMessagePosted => IO[Unit]) =>
+            _ojisanId = "ojisanId",
+            _onMessage = (cb: MessageEntity => IO[Unit]) =>
               cb(
-                createSlackMessagePosted(
-                  "mentionedOjisan",
+                createMessageEntity(
+                  "<@ojisanId> mentionedOjisan",
                   null,
                   createSlackChannel("id", null),
                   null
                 )
               ),
-            _hasOjisanMention = (_: SlackMessagePosted) => true,
             _sendMessage = (c: SlackChannel, m: String) =>
               IO {
                 c.getId should be("id")
@@ -34,7 +33,7 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
               }
           )
         }
-        s.mentionedMessage { (_, _) =>
+        s.mentionedMessage { _ =>
           "sendContext"
         }
       }
@@ -42,20 +41,20 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
       it("ojisan宛じゃないヨ") {
         val s = new OjisanService {
           override val repo: OjisanRepository = createOjisanRepository(
-            _onMessage = (cb: SlackMessagePosted => IO[Unit]) =>
+            _ojisanId = "ojisanId",
+            _onMessage = (cb: MessageEntity => IO[Unit]) =>
               cb(
-                createSlackMessagePosted(
-                  "ojisan...",
+                createMessageEntity(
+                  "<@chigauOjisan> ojisan?",
                   null,
                   createSlackChannel(null, null),
                   null
                 )
               ),
-            _hasOjisanMention = (_: SlackMessagePosted) => false,
             _sendMessage = (_: SlackChannel, _: String) => throw new AssertionError("こないで〜〜")
           )
         }
-        s.mentionedMessage { (_, _) =>
+        s.mentionedMessage { _ =>
           "sendContext"
         }
       }

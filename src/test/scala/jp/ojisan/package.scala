@@ -9,31 +9,25 @@ package object ojisan {
   private[ojisan] def createSlackChannel(id: String, name: String): SlackChannel =
     new SlackChannel(id, name, null, null, false, false, false)
 
-  private[ojisan] def createSlackMessagePosted(
+  private[ojisan] def createMessageEntity(
       messageContent: String,
       user: SlackUser,
       channel: SlackChannel,
-      timestamp: String
-  ): SlackMessagePosted =
-    new SlackMessagePosted(messageContent, null, user, channel, timestamp, null)
+      ts: String
+  ): MessageEntity =
+    MessageEntity(new SlackMessagePosted(messageContent, null, user, channel, ts, null))
 
   private[ojisan] def createSlackMessageReply(ok: Boolean, timestamp: String): SlackMessageReply =
     new SlackMessageReply(ok, null, 0, timestamp)
 
   private[ojisan] def createOjisanRepository(
-      _onMessage: (SlackMessagePosted => IO[Unit]) => IO[Unit],
-      _hasOjisanMention: SlackMessagePosted => Boolean,
+      _ojisanId: String,
+      _onMessage: (MessageEntity => IO[Unit]) => IO[Unit],
       _sendMessage: (SlackChannel, String) => IO[SlackMessageReply]
   ): OjisanRepository = new OjisanRepository {
-    override val session: SlackSession =
-      null
-
-    override def onMessage(cb: SlackMessagePosted => IO[Unit]): IO[Unit] =
-      _onMessage(cb)
-
-    override def hasOjisanMention(m: SlackMessagePosted): Boolean =
-      _hasOjisanMention(m)
-
+    override val session: SlackSession                              = null
+    override lazy val ojisanId: String                              = _ojisanId
+    override def onMessage(cb: MessageEntity => IO[Unit]): IO[Unit] = _onMessage(cb)
     override def sendMessage(channel: SlackChannel, m: String): IO[SlackMessageReply] =
       _sendMessage(channel, m)
   }
