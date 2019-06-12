@@ -14,22 +14,20 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
     describe("should mentionedMessage") {
       it("ojisan宛ダヨ") {
         val s = new OjisanService {
-          override val repo: OjisanRepository = createOjisanRepository(
-            _ojisanId = "ojisanId",
-            _onMessage = (cb: MessageEntity => IO[Unit]) =>
+          override val repo: OjisanRepository = OjisanRepositoryMock(
+            ojisanIdMock = "ojisanId",
+            onMessageMock = (cb: MessageEntity => IO[Unit]) =>
               cb(
-                createMessageEntity(
-                  "<@ojisanId> mentionedOjisan",
-                  null,
-                  createSlackChannel("id", null),
-                  null
+                MessageEntityMock(
+                  messageContent = "<@ojisanId> mentionedOjisan",
+                  channel = SlackChannelMock("id")
                 )
               ),
-            _sendMessage = (c: SlackChannel, m: String) =>
+            sendMessageMock = (c: SlackChannel, m: String) =>
               IO {
                 c.getId should be("id")
                 m should be("sendContext")
-                createSlackMessageReply(ok = true, null)
+                SlackMessageReplyMock(ok = true)
               }
           )
         }
@@ -40,18 +38,16 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
 
       it("ojisan宛じゃないヨ") {
         val s = new OjisanService {
-          override val repo: OjisanRepository = createOjisanRepository(
-            _ojisanId = "ojisanId",
-            _onMessage = (cb: MessageEntity => IO[Unit]) =>
+          override val repo: OjisanRepository = OjisanRepositoryMock(
+            ojisanIdMock = "ojisanId",
+            onMessageMock = (cb: MessageEntity => IO[Unit]) =>
               cb(
-                createMessageEntity(
-                  "<@chigauOjisan> ojisan?",
-                  null,
-                  createSlackChannel(null, null),
-                  null
+                MessageEntityMock(
+                  messageContent = "<@chigauOjisan> ojisan?",
+                  channel = SlackChannelMock()
                 )
               ),
-            _sendMessage = (_: SlackChannel, _: String) => throw new AssertionError("こないで〜〜")
+            sendMessageMock = (_, _) => throw new AssertionError("こないで〜〜")
           )
         }
         s.mentionedMessage { _ =>
