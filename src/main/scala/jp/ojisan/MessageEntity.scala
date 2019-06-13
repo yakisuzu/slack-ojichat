@@ -15,36 +15,29 @@ case class MessageEntity(message: SlackMessagePosted) {
   val ts: String            = message.getTimestamp
   val context: String       = message.getMessageContent
 
-  private val splitContext: Array[String] = message.getMessageContent split "\\s"
-
   def hasMention(userId: String): Boolean =
     context contains userId
 
   def isTalk(userId: String): Boolean =
     sender.getId == userId
 
-  def contextToUserIds: Array[String] =
-    splitContext
-      .map { c =>
-        MessageEntity.userIdFormatter.findFirstIn(c)
-      }
-      .collect {
-        case Some(userId) => userId
-      }
+  def contextToUserIds: Seq[String] =
+    MessageEntity.userIdRegex
+      .findAllMatchIn(context)
+      .toSeq
+      .map { _.subgroups.head }
 
   def contextToTime: Option[String] =
-    splitContext
-      .map { c =>
-        Try(LocalTime.parse(c, MessageEntity.timeFormatter))
-      }
-      .collectFirst {
-        case Success(time) => time.format(MessageEntity.timeFormatter)
-      }
+    MessageEntity.timeRegex
+      .findAllIn(context)
+      .map(c => Try(LocalTime.parse(c, MessageEntity.timeFormatter)))
+      .collectFirst { case Success(time) => time.format(MessageEntity.timeFormatter) }
 }
 
 object MessageEntity {
+  val userIdRegex: Regex                       = """<@(\w+)>""".r
+  val timeRegex: Regex                         = "[0-2][0-9]:[0-5][0-9]".r
   val timeFormatter: DateTimeFormatter         = DateTimeFormatter.ofPattern("HH:mm")
-  val userIdFormatter: Regex                   = "<@[a-z,A-Z,0-9]+>".r
-  def isContextUserId(userId: String): Boolean = userId.matches(userIdFormatter.regex)
+  def isContextUserId(userId: String): Boolean = userId.matches(userIdRegex.regex)
   def toContextUserId(userId: String): String  = if (isContextUserId(userId)) userId else s"<@$userId>"
 }

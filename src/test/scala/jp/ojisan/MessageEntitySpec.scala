@@ -11,9 +11,15 @@ class MessageEntitySpec extends FunSpec with BeforeAndAfterEach {
     it("userIdが取れる") {
       val s      = new MessageEntity(SlackMessagePostedMock(messageContent = "<@dare> <@dore>　oh yeah"))
       val actual = s.contextToUserIds
-      actual should be(Array("dare", "dore"))
+      actual should be(Seq("dare", "dore"))
     }
   }
 
-  describe("contextToTime") {}
+  describe("contextToTime") {
+    it("時間が取れる") {
+      val s      = new MessageEntity(SlackMessagePostedMock(messageContent = "<@dare> <@dore>　oh yeah 01:30"))
+      val actual = s.contextToTime
+      actual should be(Some("01:30"))
+    }
+  }
 }
