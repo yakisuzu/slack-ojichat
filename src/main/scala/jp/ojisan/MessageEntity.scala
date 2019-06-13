@@ -6,6 +6,7 @@ import java.time.format.DateTimeFormatter
 import com.ullink.slack.simpleslackapi.events.SlackMessagePosted
 import com.ullink.slack.simpleslackapi.{SlackChannel, SlackUser}
 
+import scala.util.matching.Regex
 import scala.util.{Success, Try}
 
 case class MessageEntity(message: SlackMessagePosted) {
@@ -14,23 +15,36 @@ case class MessageEntity(message: SlackMessagePosted) {
   val ts: String            = message.getTimestamp
   val context: String       = message.getMessageContent
 
-  private val splitedContext: Array[String] = message.getMessageContent split "\\s"
+  private val splitContext: Array[String] = message.getMessageContent split "\\s"
 
-  def hasMention(id: String): Boolean =
-    context contains id
+  def hasMention(userId: String): Boolean =
+    context contains userId
 
-  def isTalk(id: String): Boolean =
-    sender.getId == id
+  def isTalk(userId: String): Boolean =
+    sender.getId == userId
 
-  def contextToIds: Array[String] =
-    splitedContext.filter(_.matches("<@[a-z,A-Z,0-9]+>"))
-
-  def contextToTime: Option[LocalTime] =
-    splitedContext
+  def contextToUserIds: Array[String] =
+    splitContext
       .map { c =>
-        Try(LocalTime.parse(c, DateTimeFormatter.ofPattern("HH:mm")))
+        MessageEntity.userIdFormatter.findFirstIn(c)
+      }
+      .collect {
+        case Some(userId) => userId
+      }
+
+  def contextToTime: Option[String] =
+    splitContext
+      .map { c =>
+        Try(LocalTime.parse(c, MessageEntity.timeFormatter))
       }
       .collectFirst {
-        case Success(t) => t
+        case Success(time) => time.format(MessageEntity.timeFormatter)
       }
+}
+
+object MessageEntity {
+  val timeFormatter: DateTimeFormatter         = DateTimeFormatter.ofPattern("HH:mm")
+  val userIdFormatter: Regex                   = "<@[a-z,A-Z,0-9]+>".r
+  def isContextUserId(userId: String): Boolean = userId.matches(userIdFormatter.regex)
+  def toContextUserId(userId: String): String  = if (isContextUserId(userId)) userId else s"<@$userId>"
 }

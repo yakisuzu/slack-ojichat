@@ -1,7 +1,5 @@
 package jp.ojisan
 
-import java.time.format.DateTimeFormatter
-
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import com.ullink.slack.simpleslackapi.SlackUser
@@ -40,20 +38,21 @@ trait OjisanService extends LazyLogging {
 
   def mentionRequest(ojiTalk: String => String): Unit =
     repo.onMessage { message =>
-      (repo.getOtherUserIds(message.contextToIds), message.contextToTime) match {
-        case (ids, _) if ids.isEmpty => IO(())
-        case (_, None)               => IO(())
-        case (ids, Some(time)) =>
+      (repo.filterOtherUserIds(message.contextToUserIds), message.contextToTime) match {
+        case (userIds, _) if userIds.isEmpty => IO(())
+        case (_, None)                       => IO(())
+        case (userIds, Some(time)) =>
           IO {
             repo
               .sendMessage(
                 message.channel,
-                s"${time.format(DateTimeFormatter.ofPattern("HH:mm"))} になったら教えるネ"
+                s"$time になったら教えるネ"
               )
               .unsafeRunSync
             // FIXME Timer
+            val contextUsers = userIds.map(MessageEntity.toContextUserId).mkString(" ")
             repo
-              .sendMessage(message.channel, ojiTalk(ids.mkString(" ")))
+              .sendMessage(message.channel, ojiTalk(contextUsers))
               .unsafeRunSync
             ()
           }

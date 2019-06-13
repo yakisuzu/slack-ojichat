@@ -14,11 +14,11 @@ trait OjisanRepository extends LazyLogging {
   lazy val ojisanId: String    = session.sessionPersona().getId
   lazy val emojis: Set[String] = session.listEmoji().getReply.getEmojis.keySet().asScala.toSet
 
-  def getUser(userId: String): Option[SlackUser] =
+  def findUser(userId: String): Option[SlackUser] =
     Option(session.findUserById(userId))
 
-  def getOtherUserIds(userIds: Array[String]): Array[String] =
-    userIds.filter(!_.contains(ojisanId))
+  def filterOtherUserIds(userIds: Array[String]): Array[String] =
+    userIds.filter(_ != ojisanId)
 
   def addReactionToMessage(channel: SlackChannel, ts: String, emoji: String): IO[Unit] = IO {
     session.addReactionToMessage(channel, ts, emoji)
