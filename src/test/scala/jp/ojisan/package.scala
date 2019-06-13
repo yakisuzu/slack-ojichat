@@ -37,26 +37,23 @@ package object ojisan {
     def apply(
         id: String = "",
         name: String = ""
-    ): SlackChannel =
-      new SlackChannel(id, name, null, null, false, false, false)
+    ): SlackChannel = new SlackChannel(id, name, null, null, false, false, false)
   }
 
-  private[ojisan] object MessageEntityMock {
+  private[ojisan] object SlackMessagePostedMock {
     def apply(
         messageContent: String = "",
         user: SlackUser = SlackUserMock(),
         channel: SlackChannel = SlackChannelMock(),
         ts: String = ""
-    ): MessageEntity =
-      MessageEntity(new SlackMessagePosted(messageContent, null, user, channel, ts, null))
+    ): SlackMessagePosted = new SlackMessagePosted(messageContent, null, user, channel, ts, null)
   }
 
   private[ojisan] object SlackMessageReplyMock {
     def apply(
         ok: Boolean = false,
         timestamp: String = ""
-    ): SlackMessageReply =
-      new SlackMessageReply(ok, null, 0, timestamp)
+    ): SlackMessageReply = new SlackMessageReply(ok, null, 0, timestamp)
   }
 
   private[ojisan] object OjisanRepositoryMock {
@@ -66,11 +63,10 @@ package object ojisan {
         sendMessageMock: (SlackChannel, String) => IO[SlackMessageReply] = null,
         addReactionToMessageMock: (SlackChannel, String, String) => IO[Unit] = null
     ): OjisanRepository = new OjisanRepository {
-      override val session: SlackSession                              = null
-      override lazy val ojisanId: String                              = ojisanIdMock
-      override def onMessage(cb: MessageEntity => IO[Unit]): IO[Unit] = onMessageMock(cb)
-      override def sendMessage(channel: SlackChannel, m: String): IO[SlackMessageReply] =
-        sendMessageMock(channel, m)
+      override val session: SlackSession                                                = null
+      override lazy val ojisanId: String                                                = ojisanIdMock
+      override def onMessage(cb: MessageEntity => IO[Unit]): IO[Unit]                   = onMessageMock(cb)
+      override def sendMessage(channel: SlackChannel, m: String): IO[SlackMessageReply] = sendMessageMock(channel, m)
       override def addReactionToMessage(
           channel: SlackChannel,
           ts: String,
