@@ -34,7 +34,7 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
       }
       s.mentionedMessage { _ =>
         "sendContext"
-      }
+      } unsafeRunSync
     }
 
     it("ojisan宛じゃないヨ") {
@@ -55,7 +55,7 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
       }
       s.mentionedMessage { _ =>
         "sendContext"
-      }
+      } unsafeRunSync
     }
   }
 
@@ -84,7 +84,7 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
             }
         )
       }
-      s.kimagureReaction()
+      s kimagureReaction() unsafeRunSync
     }
 
     it("反応しない") {
@@ -103,7 +103,7 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
           addReactionToMessageMock = (_, _, _) => throw new AssertionError("こないで〜〜〜")
         )
       }
-      sSelf.kimagureReaction()
+      sSelf.kimagureReaction() unsafeRunSync
 
       val sNg = new OjisanService {
         override def rand100: Int = 60 // ng
@@ -112,7 +112,7 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
           addReactionToMessageMock = (_, _, _) => throw new AssertionError("こないで〜〜〜")
         )
       }
-      sNg.kimagureReaction()
+      sNg.kimagureReaction() unsafeRunSync
     }
   }
 
