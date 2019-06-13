@@ -2,6 +2,7 @@ package jp.ojisan
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
+import com.ullink.slack.simpleslackapi.SlackUser
 
 object Main extends App with LazyLogging {
   lazy val conf        = ConfigFactory.load()
@@ -15,12 +16,17 @@ object Main extends App with LazyLogging {
     ojisanService.debugMessage()
 
     // オジサンはかまってくれると嬉しい
-    ojisanService.mentionedMessage { user =>
-      ojichatService.getTalk(Option(user.getRealName)).unsafeRunSync()
+    ojisanService.mentionedMessage { user: SlackUser =>
+      ojichatService.getTalk(Some(user.getRealName)).unsafeRunSync()
     }
 
     // オジサンはかまいたい
     ojisanService.kimagureReaction()
+
+    // オジサンはやさしい
+    ojisanService.mentionRequest { at: String =>
+      ojichatService.getTalk(Some(at)).unsafeRunSync()
+    }
 
     logger.info("オジサン準備終わったヨ")
   }

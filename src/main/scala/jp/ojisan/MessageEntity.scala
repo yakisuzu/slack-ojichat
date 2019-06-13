@@ -1,7 +1,13 @@
 package jp.ojisan
 
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+
 import com.ullink.slack.simpleslackapi.events.SlackMessagePosted
 import com.ullink.slack.simpleslackapi.{SlackChannel, SlackUser}
+
+import scala.util.matching.Regex
+import scala.util.{Success, Try}
 
 case class MessageEntity(message: SlackMessagePosted) {
   val channel: SlackChannel = message.getChannel
@@ -9,14 +15,29 @@ case class MessageEntity(message: SlackMessagePosted) {
   val ts: String            = message.getTimestamp
   val context: String       = message.getMessageContent
 
-  private val splitedContext: Array[String] = message.getMessageContent split "\\s"
+  def hasMention(userId: String): Boolean =
+    context contains userId
 
-  def hasMention(id: String): Boolean =
-    context contains id
+  def isTalk(userId: String): Boolean =
+    sender.getId == userId
 
-  def getIds: Array[String] =
-    splitedContext.filter(_.matches("<@[a-z,A-Z,0-9]+>"))
+  def contextToUserIds: Seq[String] =
+    MessageEntity.userIdRegex
+      .findAllMatchIn(context)
+      .toSeq
+      .map { _.subgroups.head }
 
-  def isTalk(id: String): Boolean =
-    sender.getId == id
+  def contextToTime: Option[String] =
+    MessageEntity.timeRegex
+      .findAllIn(context)
+      .map(c => Try(LocalTime.parse(c, MessageEntity.timeFormatter)))
+      .collectFirst { case Success(time) => time.format(MessageEntity.timeFormatter) }
+}
+
+object MessageEntity {
+  val userIdRegex: Regex                       = """<@(\w+)>""".r
+  val timeRegex: Regex                         = "[0-2][0-9]:[0-5][0-9]".r
+  val timeFormatter: DateTimeFormatter         = DateTimeFormatter.ofPattern("HH:mm")
+  def isContextUserId(userId: String): Boolean = userId.matches(userIdRegex.regex)
+  def toContextUserId(userId: String): String  = if (isContextUserId(userId)) userId else s"<@$userId>"
 }

@@ -36,9 +36,27 @@ trait OjisanService extends LazyLogging {
       }
     } unsafeRunSync
 
-  def mentionRequest(): Unit =
-    repo.onMessage { _ =>
-      IO(())
+  def mentionRequest(ojiTalk: String => String): Unit =
+    repo.onMessage { message =>
+      (repo.filterOtherUserIds(message.contextToUserIds), message.contextToTime) match {
+        case (userIds, _) if userIds.isEmpty => IO(())
+        case (_, None)                       => IO(())
+        case (userIds, Some(time)) =>
+          IO {
+            repo
+              .sendMessage(
+                message.channel,
+                s"$time になったら教えるネ"
+              )
+              .unsafeRunSync
+            // FIXME Timer
+            val contextUsers = userIds.map(MessageEntity.toContextUserId).mkString(" ")
+            repo
+              .sendMessage(message.channel, ojiTalk(contextUsers))
+              .unsafeRunSync
+            ()
+          }
+      }
     } unsafeRunSync
 
   def choiceEmoji(): String = {
