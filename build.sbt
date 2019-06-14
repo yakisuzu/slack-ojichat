@@ -32,6 +32,7 @@ scalacOptions ++= Seq(
   "-opt-inline-from", // Patterns for classfile names from which to allow inlining,
   // Warning Settings
   "-Xfatal-warnings",      // Fail the compilation if there are any warnings.
+  "-Ywarn-macros:after",   // Enable lint warnings on macro expansions.
   "-Ywarn-dead-code",      // Warn when dead code is identified.
   "-Ywarn-value-discard",  // Warn when non-Unit expression results are unused.
   "-Ywarn-numeric-widen",  // Warn when numerics are widened.

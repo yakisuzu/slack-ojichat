@@ -1,13 +1,18 @@
 package jp.ojisan
 
+import java.util.concurrent.ScheduledExecutorService
+
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import com.ullink.slack.simpleslackapi.SlackUser
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
 import scala.util.Random
 
 trait OjisanService extends LazyLogging {
   val repo: OjisanRepository
+
   private val rand: Random = new Random()
   def rand100: Int         = rand nextInt 100
   def randN(n: Int): Int   = rand nextInt n
@@ -29,33 +34,30 @@ trait OjisanService extends LazyLogging {
   def kimagureReaction(): IO[Unit] =
     repo.onMessage { message =>
       (message isTalk repo.ojisanId, rand100) match {
-        case (ok, _) if ok => IO(()) // 自分の発言にはリアクションしない
-        case (_, n) if n < 50 =>
-          repo.addReactionToMessage(message.channel, message.ts, choiceEmoji())
-        case _ => IO(())
+        case (ok, _) if ok    => IO(()) // 自分の発言にはリアクションしない
+        case (_, n) if n < 50 => repo.addReactionToMessage(message.channel, message.ts, choiceEmoji())
+        case _                => IO(())
       }
     }
 
-  def mentionRequest(ojiTalk: String => String): IO[Unit] =
+  def mentionRequest(ojiTalk: String => String)(implicit ec: ExecutionContext, sc: ScheduledExecutorService): IO[Unit] =
     repo.onMessage { message =>
       (repo.filterOtherUserIds(message.contextToUserIds), message.contextToTime) match {
         case (userIds, _) if userIds.isEmpty => IO(())
         case (_, None)                       => IO(())
         case (userIds, Some(time)) =>
-          IO {
-            repo
-              .sendMessage(
-                message.channel,
-                s"$time になったら教えるネ"
-              )
-              .unsafeRunSync
-            // FIXME Timer
-            val contextUsers = userIds.map(MessageEntity.toContextUserId).mkString(" ")
-            repo
-              .sendMessage(message.channel, ojiTalk(contextUsers))
-              .unsafeRunSync
-            ()
-          }
+          for {
+            _ <- repo.sendMessage(message.channel, s"$time になったら教えるネ")
+            _ <- IO {
+              // FIXME 副作用？？？
+              (for {
+                // TODO 予定時刻 - 現在時刻 = sleep
+                _            <- TimerService()(ec, sc).sleep(10.second)
+                contextUsers <- IO(userIds.map(MessageEntity.toContextUserId).mkString(" "))
+                _            <- repo.sendMessage(message.channel, ojiTalk(contextUsers))
+              } yield ()).unsafeRunAsyncAndForget()
+            }
+          } yield ()
       }
     }
 
