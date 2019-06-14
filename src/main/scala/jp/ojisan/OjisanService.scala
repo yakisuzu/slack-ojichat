@@ -12,7 +12,7 @@ trait OjisanService extends LazyLogging {
   def rand100: Int         = rand nextInt 100
   def randN(n: Int): Int   = rand nextInt n
 
-  def mentionedMessage(makeMessage: SlackUser => String): Unit =
+  def mentionedMessage(makeMessage: SlackUser => String): IO[Unit] =
     repo.onMessage { message =>
       if (message hasMention repo.ojisanId) {
         repo
@@ -24,9 +24,9 @@ trait OjisanService extends LazyLogging {
         // FIXME メッセージ送信時刻の保持
         IO(())
       } else IO(())
-    } unsafeRunSync
+    }
 
-  def kimagureReaction(): Unit =
+  def kimagureReaction(): IO[Unit] =
     repo.onMessage { message =>
       (message isTalk repo.ojisanId, rand100) match {
         case (ok, _) if ok => IO(()) // 自分の発言にはリアクションしない
@@ -34,9 +34,9 @@ trait OjisanService extends LazyLogging {
           repo.addReactionToMessage(message.channel, message.ts, choiceEmoji())
         case _ => IO(())
       }
-    } unsafeRunSync
+    }
 
-  def mentionRequest(ojiTalk: String => String): Unit =
+  def mentionRequest(ojiTalk: String => String): IO[Unit] =
     repo.onMessage { message =>
       (repo.filterOtherUserIds(message.contextToUserIds), message.contextToTime) match {
         case (userIds, _) if userIds.isEmpty => IO(())
@@ -57,20 +57,20 @@ trait OjisanService extends LazyLogging {
             ()
           }
       }
-    } unsafeRunSync
+    }
 
   def choiceEmoji(): String = {
     val i = randN(repo.emojis.size)
     repo.emojis.zipWithIndex.find(_._2 == i).map(_._1).get
   }
 
-  def debugMessage(): Unit =
+  def debugMessage(): IO[Unit] =
     repo.onMessage { message =>
       for {
         _ <- debug(message.sender)
         _ <- debug(message)
       } yield ()
-    } unsafeRunSync
+    }
 
   def debug(u: SlackUser): IO[Unit] = IO {
     logger.debug(
