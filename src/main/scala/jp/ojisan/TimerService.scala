@@ -31,8 +31,7 @@ trait TimerService extends Timer[IO] {
           timespan.unit
         )
         .cancel(false)
-      ()
-    }
+    }.map(_ => ())
   }
 }
 

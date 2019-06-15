@@ -19,32 +19,31 @@ trait OjisanService extends LazyLogging {
 
   def mentionedMessage(makeMessage: SlackUser => String): IO[Unit] =
     repo.onMessage { message =>
-      if (message hasMention repo.ojisanId) {
-        repo
-          .sendMessage(
-            message.channel,
-            makeMessage(message.sender)
-          )
-          .unsafeRunSync()
-        // FIXME メッセージ送信時刻の保持
-        IO(())
-      } else IO(())
+      message match {
+        case _ if !(message hasMention repo.ojisanId) => IO(()) // オジサンあてじゃない
+        case _                                        =>
+          // FIXME メッセージ送信時刻の保持
+          repo
+            .sendMessage(message.channel, makeMessage(message.sender))
+            .map(_ => ())
+      }
     }
 
   def kimagureReaction(): IO[Unit] =
     repo.onMessage { message =>
       (message isTalk repo.ojisanId, rand100) match {
         case (ok, _) if ok    => IO(()) // 自分の発言にはリアクションしない
-        case (_, n) if n < 50 => repo.addReactionToMessage(message.channel, message.ts, choiceEmoji())
-        case _                => IO(())
+        case (_, n) if n < 50 => IO(()) // 気まぐれで反応しない
+        case _                => repo.addReactionToMessage(message.channel, message.ts, choiceEmoji())
       }
     }
 
   def mentionRequest(ojiTalk: String => String)(implicit ec: ExecutionContext, sc: ScheduledExecutorService): IO[Unit] =
     repo.onMessage { message =>
-      (repo.filterOtherUserIds(message.contextToUserIds), message.contextToTime) match {
-        case (userIds, _) if userIds.isEmpty => IO(())
-        case (_, None)                       => IO(())
+      (message.contextToUserIds, message.contextToTime) match {
+        case _ if !(message hasMention repo.ojisanId)                 => IO(()) // オジサンあてじゃない
+        case (userIds, _) if repo.filterOtherUserIds(userIds).isEmpty => IO(()) // 誰にもメンションがない
+        case (_, None)                                                => IO(()) // 時間指定ない
         case (userIds, Some(time)) =>
           for {
             _ <- repo.sendMessage(message.channel, s"$time になったら教えるネ")
@@ -52,9 +51,12 @@ trait OjisanService extends LazyLogging {
               // FIXME 副作用？？？
               (for {
                 // TODO 予定時刻 - 現在時刻 = sleep
-                _            <- TimerService()(ec, sc).sleep(10.second)
+                _            <- IO(logger.info("timer start"))
+                _            <- TimerService()(ec, sc).sleep(1.seconds)
+                _            <- IO(logger.info("timer sleep after"))
                 contextUsers <- IO(userIds.map(MessageEntity.toContextUserId).mkString(" "))
                 _            <- repo.sendMessage(message.channel, ojiTalk(contextUsers))
+                _            <- IO(logger.info("timer end"))
               } yield ()).unsafeRunAsyncAndForget()
             }
           } yield ()
