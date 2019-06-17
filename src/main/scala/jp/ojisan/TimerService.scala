@@ -2,7 +2,7 @@ package jp.ojisan
 
 import java.util.concurrent.ScheduledExecutorService
 
-import cats.effect.{Clock, IO, Timer}
+import cats.effect._
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -32,6 +32,11 @@ trait TimerService extends Timer[IO] {
         )
         .cancel(false)
     }.map(_ => ())
+  }
+
+  def sleepSync(timespan: FiniteDuration)(f: IO[Unit]): SyncIO[Unit] = Effect[IO].runAsync { sleep(timespan) } {
+    case Right(_) => f
+    case Left(_)  => IO(())
   }
 }
 

@@ -40,9 +40,9 @@ object Main extends IOApp with LazyLogging {
             _ <- ojisanService.kimagureReaction()
 
             // オジサンはやさしい
-            _ <- ojisanService.mentionRequest { at: String =>
-              ojichatService.getTalk(Some(at)).unsafeRunSync()
-            }
+//            _ <- ojisanService.mentionRequest { at: String =>
+//              ojichatService.getTalk(Some(at)).unsafeRunSync()
+//            }
 
             _ <- IO(logger.info("オジサン準備終わったヨ"))
           } yield ()
