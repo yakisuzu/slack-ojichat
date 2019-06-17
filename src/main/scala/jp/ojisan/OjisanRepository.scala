@@ -20,10 +20,10 @@ trait OjisanRepository extends LazyLogging {
   def filterOtherUserIds(userIds: Seq[String]): Seq[String] =
     userIds.filter(_ != ojisanId)
 
-  def addReactionToMessage(channel: SlackChannel, ts: String, emoji: String): IO[Unit] = IO {
-    session.addReactionToMessage(channel, ts, emoji)
-    ()
-  }
+  def addReactionToMessage(channel: SlackChannel, ts: String, emoji: String): IO[Unit] =
+    IO {
+      session.addReactionToMessage(channel, ts, emoji)
+    }.map(_ => ())
 
   def onMessage(cb: (MessageEntity, SlackSession) => IO[Unit]): IO[Unit] = IO {
     session.addMessagePostedListener { (event, s) =>

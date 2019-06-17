@@ -89,7 +89,7 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
 
     it("反応しない") {
       val sSelf = new OjisanService {
-        override def rand100: Int = 10 // ok
+        override def rand100: Int = 60 // ok
         override val repo: OjisanRepository = OjisanRepositoryMock(
           ojisanIdMock = "ojisanId",
           onMessageMock = (cb: MessageEntity => IO[Unit]) =>
@@ -106,7 +106,7 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
       sSelf.kimagureReaction() unsafeRunSync
 
       val sNg = new OjisanService {
-        override def rand100: Int = 60 // ng
+        override def rand100: Int = 10 // ng
         override val repo: OjisanRepository = OjisanRepositoryMock(
           onMessageMock = (cb: MessageEntity => IO[Unit]) => cb(new MessageEntity(SlackMessagePostedMock())),
           addReactionToMessageMock = (_, _, _) => throw new AssertionError("こないで〜〜〜")
