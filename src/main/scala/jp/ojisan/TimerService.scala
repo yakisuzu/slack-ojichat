@@ -33,10 +33,11 @@ trait TimerService extends Timer[IO] with LazyLogging {
     ()
   }
 
-  def sleepSync(timespan: FiniteDuration)(f: IO[Unit]): SyncIO[Unit] = Effect[IO].runAsync { sleep(timespan) } {
-    case Right(_) => f
-    case Left(_)  => IO.unit
-  }
+  def sleepIO(timespan: FiniteDuration)(f: IO[Unit]): IO[Unit] =
+    Effect[IO].runAsync { sleep(timespan) } {
+      case Right(_) => f
+      case Left(_)  => IO.unit
+    }.toIO
 }
 
 object TimerService {
