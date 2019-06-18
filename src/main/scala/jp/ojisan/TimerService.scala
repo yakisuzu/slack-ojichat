@@ -36,7 +36,7 @@ trait TimerService extends Timer[IO] {
 
   def sleepSync(timespan: FiniteDuration)(f: IO[Unit]): SyncIO[Unit] = Effect[IO].runAsync { sleep(timespan) } {
     case Right(_) => f
-    case Left(_)  => IO(())
+    case Left(_)  => IO.unit
   }
 }
 
