@@ -3,11 +3,12 @@ package jp.ojisan
 import java.util.concurrent.ScheduledExecutorService
 
 import cats.effect._
+import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-trait TimerService extends Timer[IO] {
+trait TimerService extends Timer[IO] with LazyLogging {
   val ec: ExecutionContext
   val sc: ScheduledExecutorService
 
