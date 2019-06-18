@@ -47,19 +47,12 @@ trait OjisanService extends LazyLogging {
         case (userIds, Some(time)) =>
           for {
             _ <- repo.sendMessage(message.channel, s"$time になったら教えるネ")
-            _ <- IO(logger.debug("timer start"))
-            _ <- TimerService()(ec, sc)
-              .sleepSync(10.seconds) {
-                for {
-                  // TODO 予定時刻 - 現在時刻 = sleep
-                  _            <- IO(logger.debug("lazy start"))
-                  contextUsers <- IO(repo.filterOtherUserIds(userIds).map(MessageEntity.toContextUserId).mkString(" "))
-                  _            <- repo.sendMessage(message.channel, ojiTalk(contextUsers))
-                  _            <- IO(logger.debug("lazy end"))
-                } yield ()
-              }
-              .toIO
-            _ <- IO(logger.debug("timer end"))
+            _ <- for {
+              // TODO 予定時刻 - 現在時刻 = sleep
+              _            <- TimerService()(ec, sc).sleep(5.seconds)
+              contextUsers <- IO(repo.filterOtherUserIds(userIds).map(MessageEntity.toContextUserId).mkString(" "))
+              _            <- repo.sendMessage(message.channel, ojiTalk(contextUsers))
+            } yield ()
           } yield ()
       }
     }

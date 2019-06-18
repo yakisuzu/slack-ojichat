@@ -22,17 +22,23 @@ trait TimerService extends Timer[IO] with LazyLogging {
     }
   }
 
-  override def sleep(timespan: FiniteDuration): IO[Unit] = IO.cancelable { cb =>
-    IO {
-      sc.schedule(
-          new Runnable {
-            def run(): Unit = ec.execute(() => cb(Right(())))
-          },
-          timespan.length,
-          timespan.unit
-        )
-        .cancel(false)
-    }.map(_ => ())
+  override def sleep(timespan: FiniteDuration): IO[Unit] = Async[IO].async { cb =>
+    logger.debug("sleep3 start")
+    sc.schedule(
+      new Runnable {
+        def run(): Unit = {
+          logger.debug("execute3.5 before")
+          ec.execute(() => {
+            logger.debug("execute4 start")
+            cb(Right(()))
+            logger.debug("execute4 end")
+          })
+        }
+      },
+      timespan.length,
+      timespan.unit
+    )
+    logger.debug("sleep3 end")
   }
 
   def sleepSync(timespan: FiniteDuration)(f: IO[Unit]): SyncIO[Unit] = Effect[IO].runAsync { sleep(timespan) } {
