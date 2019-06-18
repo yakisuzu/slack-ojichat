@@ -40,7 +40,7 @@ trait OjisanService extends LazyLogging {
 
   def mentionRequest(ojiTalk: String => String)(implicit ec: ExecutionContext, sc: ScheduledExecutorService): IO[Unit] =
     repo.onMessage { message =>
-      (message.contextToUserIds, message.contextToTime) match {
+      (message.contextToUserIds, message.contextToLocalTime) match {
         case _ if !(message hasMention repo.ojisanId)                 => IO.unit // オジサンあてじゃない
         case (userIds, _) if repo.filterOtherUserIds(userIds).isEmpty => IO.unit // 誰にもメンションがない
         case (_, None)                                                => IO.unit // 時間指定ない

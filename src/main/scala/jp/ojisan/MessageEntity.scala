@@ -28,10 +28,13 @@ case class MessageEntity(message: SlackMessagePosted) {
       .map { _.subgroups.head }
 
   def contextToTime: Option[String] =
+    contextToLocalTime.map(_.format(MessageEntity.timeFormatter))
+
+  def contextToLocalTime: Option[LocalTime] =
     MessageEntity.timeRegex
       .findAllIn(context)
       .map(c => Try(LocalTime.parse(c, MessageEntity.timeFormatter)))
-      .collectFirst { case Success(time) => time.format(MessageEntity.timeFormatter) }
+      .collectFirst { case Success(time) => time }
 }
 
 object MessageEntity {

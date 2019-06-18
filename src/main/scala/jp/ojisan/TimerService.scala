@@ -1,5 +1,6 @@
 package jp.ojisan
 
+import java.time.LocalTime
 import java.util.concurrent.ScheduledExecutorService
 
 import cats.effect._
