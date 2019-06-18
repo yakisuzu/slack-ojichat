@@ -20,7 +20,7 @@ trait OjisanService extends LazyLogging {
   def mentionedMessage(makeMessage: SlackUser => String): IO[Unit] =
     repo.onMessage { message =>
       message match {
-        case _ if !(message hasMention repo.ojisanId) => IO(()) // オジサンあてじゃない
+        case _ if !(message hasMention repo.ojisanId) => IO.unit // オジサンあてじゃない
         case _                                        =>
           // FIXME メッセージ送信時刻の保持
           repo
@@ -32,8 +32,8 @@ trait OjisanService extends LazyLogging {
   def kimagureReaction(): IO[Unit] =
     repo.onMessage { message =>
       (message isTalk repo.ojisanId, rand100) match {
-        case (ok, _) if ok    => IO(()) // 自分の発言にはリアクションしない
-        case (_, n) if n < 50 => IO(()) // 気まぐれで反応しない
+        case (ok, _) if ok    => IO.unit // 自分の発言にはリアクションしない
+        case (_, n) if n < 50 => IO.unit // 気まぐれで反応しない
         case _                => repo.addReactionToMessage(message.channel, message.ts, choiceEmoji())
       }
     }
@@ -41,9 +41,9 @@ trait OjisanService extends LazyLogging {
   def mentionRequest(ojiTalk: String => String)(implicit ec: ExecutionContext, sc: ScheduledExecutorService): IO[Unit] =
     repo.onMessage { message =>
       (message.contextToUserIds, message.contextToTime) match {
-        case _ if !(message hasMention repo.ojisanId)                 => IO(()) // オジサンあてじゃない
-        case (userIds, _) if repo.filterOtherUserIds(userIds).isEmpty => IO(()) // 誰にもメンションがない
-        case (_, None)                                                => IO(()) // 時間指定ない
+        case _ if !(message hasMention repo.ojisanId)                 => IO.unit // オジサンあてじゃない
+        case (userIds, _) if repo.filterOtherUserIds(userIds).isEmpty => IO.unit // 誰にもメンションがない
+        case (_, None)                                                => IO.unit // 時間指定ない
         case (userIds, Some(time)) =>
           for {
             _ <- repo.sendMessage(message.channel, s"$time になったら教えるネ")
