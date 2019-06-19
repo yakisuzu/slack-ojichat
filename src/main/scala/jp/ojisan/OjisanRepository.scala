@@ -46,12 +46,13 @@ trait OjisanRepository extends LazyLogging {
       session.sendMessage(channel, m).getReply
     }
 
-  def helloOjisan(): IO[Unit] = IO {
-    sendMessage(
-      session.findChannelByName("random"),
-      "よ〜〜〜し、オジサンがんばっちゃうゾ"
-    )
-  }
+  def helloOjisan(): IO[Unit] =
+    IO {
+      sendMessage(
+        session.findChannelByName("random"),
+        "よ〜〜〜し、オジサンがんばっちゃうゾ"
+      )
+    }.map(_ => ())
 }
 
 object OjisanRepository {

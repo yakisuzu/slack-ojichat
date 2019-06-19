@@ -7,7 +7,6 @@ import com.typesafe.scalalogging.LazyLogging
 import com.ullink.slack.simpleslackapi.SlackUser
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration._
 import scala.util.Random
 
 trait OjisanService extends LazyLogging {
@@ -45,16 +44,23 @@ trait OjisanService extends LazyLogging {
         case (userIds, _) if repo.filterOtherUserIds(userIds).isEmpty => IO.unit // 誰にもメンションがない
         case (_, None)                                                => IO.unit // 時間指定ない
         case (userIds, Some(time)) =>
-          for {
-            _ <- repo.sendMessage(message.channel, s"$time になったら教えるネ")
-            _ <- TimerService()(ec, sc).sleepIO(5.seconds) {
+          TimerService.diffFiniteDuration(time).flatMap {
+            case None =>
+              repo
+                .sendMessage(message.channel, s"$time は過ぎてるよ〜")
+                .map(_ => ())
+            case Some(waitTime) =>
               for {
-                // TODO 予定時刻 - 現在時刻 = sleep
-                contextUsers <- IO(repo.filterOtherUserIds(userIds).map(MessageEntity.toContextUserId).mkString(" "))
-                _            <- repo.sendMessage(message.channel, ojiTalk(contextUsers))
+                _ <- repo.sendMessage(message.channel, s"$time になったら教えるネ")
+                _ <- TimerService()(ec, sc).sleepIO(waitTime) {
+                  for {
+                    // TODO 予定時刻 - 現在時刻 = sleep
+                    contextUsers <- IO(repo.filterOtherUserIds(userIds).map(MessageEntity.toContextUserId).mkString(" "))
+                    _            <- repo.sendMessage(message.channel, ojiTalk(contextUsers))
+                  } yield ()
+                }
               } yield ()
-            }
-          } yield ()
+          }
       }
     }
 
