@@ -7,7 +7,6 @@ import com.ullink.slack.simpleslackapi.replies.SlackMessageReply
 import com.ullink.slack.simpleslackapi.{SlackChannel, SlackSession, SlackUser}
 
 import scala.collection.JavaConverters._
-import scala.concurrent.{Future, Promise}
 
 trait OjisanRepository extends LazyLogging {
   val session: SlackSession
@@ -42,28 +41,17 @@ trait OjisanRepository extends LazyLogging {
     }
   }
 
-  def onMessageFuture(): IO[Future[MessageEntity]] = IO {
-    Promise[MessageEntity] match {
-      case p =>
-        session.addMessagePostedListener { (event, _) =>
-          p.success(MessageEntity(event))
-        }
-        p.future
-    }
-  }
-
   def sendMessage(channel: SlackChannel, m: String): IO[SlackMessageReply] =
     IO {
       session.sendMessage(channel, m).getReply
     }
 
-  def helloOjisan(): Unit =
-    IO {
-      sendMessage(
-        session.findChannelByName("random"),
-        "よ〜〜〜し、オジサンがんばっちゃうゾ"
-      )
-    } unsafeRunAsyncAndForget
+  def helloOjisan(): IO[Unit] = IO {
+    sendMessage(
+      session.findChannelByName("random"),
+      "よ〜〜〜し、オジサンがんばっちゃうゾ"
+    )
+  }
 }
 
 object OjisanRepository {

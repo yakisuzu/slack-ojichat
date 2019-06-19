@@ -1,6 +1,5 @@
 package jp.ojisan
 
-import java.time.LocalTime
 import java.util.concurrent.ScheduledExecutorService
 
 import cats.effect._
@@ -14,7 +13,6 @@ trait TimerService extends Timer[IO] with LazyLogging {
   val sc: ScheduledExecutorService
 
   override val clock: Clock[IO] = new Clock[IO] {
-    // def realTimeSeconds(): IO[Long] = realTime(SECONDS)
     override def realTime(unit: TimeUnit): IO[Long] = IO {
       unit.convert(System.currentTimeMillis(), MILLISECONDS)
     }
