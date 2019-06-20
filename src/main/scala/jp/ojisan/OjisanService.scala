@@ -7,7 +7,6 @@ import com.typesafe.scalalogging.LazyLogging
 import com.ullink.slack.simpleslackapi.SlackUser
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration._
 import scala.util.Random
 
 trait OjisanService extends LazyLogging {
@@ -40,27 +39,27 @@ trait OjisanService extends LazyLogging {
 
   def mentionRequest(ojiTalk: String => String)(implicit ec: ExecutionContext, sc: ScheduledExecutorService): IO[Unit] =
     repo.onMessage { message =>
-      (message.contextToUserIds, message.contextToTime) match {
+      (message.contextToUserIds, message.contextToLocalTime) match {
         case _ if !(message hasMention repo.ojisanId)                 => IO.unit // オジサンあてじゃない
         case (userIds, _) if repo.filterOtherUserIds(userIds).isEmpty => IO.unit // 誰にもメンションがない
         case (_, None)                                                => IO.unit // 時間指定ない
         case (userIds, Some(time)) =>
-          for {
-            _ <- repo.sendMessage(message.channel, s"$time になったら教えるネ")
-            _ <- IO(logger.debug("timer start"))
-            _ <- TimerService()(ec, sc)
-              .sleepSync(10.seconds) {
-                for {
-                  // TODO 予定時刻 - 現在時刻 = sleep
-                  _            <- IO(logger.debug("lazy start"))
-                  contextUsers <- IO(repo.filterOtherUserIds(userIds).map(MessageEntity.toContextUserId).mkString(" "))
-                  _            <- repo.sendMessage(message.channel, ojiTalk(contextUsers))
-                  _            <- IO(logger.debug("lazy end"))
-                } yield ()
-              }
-              .toIO
-            _ <- IO(logger.debug("timer end"))
-          } yield ()
+          TimerService.calcReservationTime(time).flatMap {
+            case None =>
+              repo
+                .sendMessage(message.channel, s"$time は過ぎてるよ〜")
+                .map(_ => ())
+            case Some(waitTime) =>
+              for {
+                _ <- repo.sendMessage(message.channel, s"$time になったら教えるネ")
+                _ <- TimerService()(ec, sc).sleepIO(waitTime) {
+                  for {
+                    contextUsers <- IO(repo.filterOtherUserIds(userIds).map(MessageEntity.toContextUserId).mkString(" "))
+                    _            <- repo.sendMessage(message.channel, ojiTalk(contextUsers))
+                  } yield ()
+                }
+              } yield ()
+          }
       }
     }
 
