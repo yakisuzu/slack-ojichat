@@ -1,6 +1,6 @@
 package jp.ojisan
 
-import java.time.{LocalDate, LocalDateTime, LocalTime}
+import java.time.LocalTime
 import java.util.concurrent.ScheduledExecutorService
 
 import cats.effect._
@@ -47,32 +47,17 @@ object TimerService {
       override val sc: ScheduledExecutorService = _sc
     }
 
-  def diffFiniteDuration(scheduleTime: LocalTime): IO[Option[FiniteDuration]] = {
-    val now = LocalDateTime.now.withSecond(0)
-    scheduleTime.atDate(LocalDate.now).compareTo(now) match {
+  def calcReservationTime(scheduleTime: LocalTime): IO[Option[FiniteDuration]] = {
+    val now = LocalTime.now.withSecond(0)
+    scheduleTime.compareTo(now) match {
       case c if c <= 0 => IO(None)
       case _ =>
         IO {
-          println(
-            scheduleTime
-              .minusHours(now.getHour.toLong)
-              .minusMinutes(now.getMinute.toLong)
-          )
-          println(
-            scheduleTime
-              .minusHours(now.getHour.toLong)
-              .minusMinutes(now.getMinute.toLong)
-              .getNano
-          )
-          Some(
-            Duration.fromNanos(
-              scheduleTime
-                .minusHours(now.getHour.toLong)
-                .minusMinutes(now.getMinute.toLong)
-                .getNano
-                .toLong
-            )
-          )
+          val diffTime = scheduleTime
+            .minusHours(now.getHour.toLong)
+            .minusMinutes(now.getMinute.toLong)
+          val diffSeconds = (diffTime.getHour.hours.toSeconds + diffTime.getMinute.minute.toSeconds).seconds
+          Some(diffSeconds)
         }
     }
   }
