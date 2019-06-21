@@ -47,18 +47,26 @@ object TimerService {
       override val sc: ScheduledExecutorService = _sc
     }
 
-  def calcReservationTime(scheduleTime: LocalTime): IO[Option[FiniteDuration]] = {
-    val now = LocalTime.now.withSecond(0)
-    scheduleTime.compareTo(now) match {
-      case c if c <= 0 => IO(None)
-      case _ =>
-        IO {
-          val diffTime = scheduleTime
+  def calcRemainingSeconds(reservationTime: LocalTime): IO[Option[FiniteDuration]] =
+    calcRemainingSeconds(reservationTime, IO(LocalTime.now))
+
+  def calcRemainingSeconds(reservationTime: LocalTime, currentTime: IO[LocalTime]): IO[Option[FiniteDuration]] =
+    for {
+      rTime <- IO(reservationTime)
+      now   <- currentTime
+      time <- rTime.compareTo(now) match {
+        case c if c <= 0 => IO(None)
+        case _ =>
+          val remainingTime = reservationTime
             .minusHours(now.getHour.toLong)
             .minusMinutes(now.getMinute.toLong)
-          val diffSeconds = (diffTime.getHour.hours.toSeconds + diffTime.getMinute.minute.toSeconds).seconds
-          Some(diffSeconds)
-        }
-    }
-  }
+            .minusSeconds(now.getSecond.toLong)
+          val remainingSeconds = (
+            remainingTime.getHour.hours.toSeconds
+              + remainingTime.getMinute.minutes.toSeconds
+              + remainingTime.getSecond.seconds.toSeconds
+          ).seconds
+          IO(Some(remainingSeconds))
+      }
+    } yield time
 }
