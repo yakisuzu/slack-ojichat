@@ -43,16 +43,16 @@ trait OjisanService extends LazyLogging {
         case _ if !(message hasMention repo.ojisanId)                 => IO.unit // オジサンあてじゃない
         case (userIds, _) if repo.filterOtherUserIds(userIds).isEmpty => IO.unit // 誰にもメンションがない
         case (_, None)                                                => IO.unit // 時間指定ない
-        case (userIds, Some(time)) =>
-          TimerService.calcReservationTime(time).flatMap {
+        case (userIds, Some(reservationTime)) =>
+          TimerService.calcRemainingSeconds(reservationTime).flatMap {
             case None =>
               repo
-                .sendMessage(message.channel, s"$time は過ぎてるよ〜")
+                .sendMessage(message.channel, s"$reservationTime は過ぎてるよ〜")
                 .map(_ => ())
-            case Some(waitTime) =>
+            case Some(remainingSeconds) =>
               for {
-                _ <- repo.sendMessage(message.channel, s"$time になったら教えるネ")
-                _ <- TimerService()(ec, sc).sleepIO(waitTime) {
+                _ <- repo.sendMessage(message.channel, s"$reservationTime になったら教えるネ")
+                _ <- TimerService()(ec, sc).sleepIO(remainingSeconds) {
                   for {
                     contextUsers <- IO(repo.filterOtherUserIds(userIds).map(MessageEntity.toContextUserId).mkString(" "))
                     _            <- repo.sendMessage(message.channel, ojiTalk(contextUsers))
