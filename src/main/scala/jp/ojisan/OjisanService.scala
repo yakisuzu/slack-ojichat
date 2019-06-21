@@ -54,7 +54,7 @@ trait OjisanService extends LazyLogging {
                 _ <- repo.sendMessage(message.channel, s"$reservationTime になったら教えるネ")
                 _ <- TimerService()(ec, sc).sleepIO(remainingSeconds) {
                   for {
-                    contextUsers <- IO(repo.filterOtherUserIds(userIds).map(MessageEntity.toContextUserId).mkString(" "))
+                    contextUsers <- IO(repo.filterOtherUserIds(userIds).map(MessageValue.toContextUserId).mkString(" "))
                     _            <- repo.sendMessage(message.channel, ojiTalk(contextUsers))
                   } yield ()
                 }
@@ -82,7 +82,7 @@ trait OjisanService extends LazyLogging {
     )
   }
 
-  def debug(m: MessageEntity): IO[Unit] = IO {
+  def debug(m: MessageValue): IO[Unit] = IO {
     logger.debug(
       s"{ ts: ${m.ts}, channelId: ${m.channel.getId}, channelName: ${m.channel.getName}, content: ${m.context} }"
     )

@@ -9,7 +9,7 @@ import com.ullink.slack.simpleslackapi.{SlackChannel, SlackUser}
 import scala.util.matching.Regex
 import scala.util.{Success, Try}
 
-case class MessageEntity(message: SlackMessagePosted) {
+case class MessageValue(message: SlackMessagePosted) {
   val channel: SlackChannel = message.getChannel
   val sender: SlackUser     = message.getSender
   val ts: String            = message.getTimestamp
@@ -22,22 +22,22 @@ case class MessageEntity(message: SlackMessagePosted) {
     sender.getId == userId
 
   def contextToUserIds: Seq[String] =
-    MessageEntity.userIdRegex
+    MessageValue.userIdRegex
       .findAllMatchIn(context)
       .toSeq
       .map { _.subgroups.head }
 
   def contextToTime: Option[String] =
-    contextToLocalTime.map(_.format(MessageEntity.timeFormatter))
+    contextToLocalTime.map(_.format(MessageValue.timeFormatter))
 
   def contextToLocalTime: Option[LocalTime] =
-    MessageEntity.timeRegex
+    MessageValue.timeRegex
       .findAllIn(context)
-      .map(c => Try(LocalTime.parse(c, MessageEntity.timeFormatter)))
+      .map(c => Try(LocalTime.parse(c, MessageValue.timeFormatter)))
       .collectFirst { case Success(time) => time }
 }
 
-object MessageEntity {
+object MessageValue {
   val userIdRegex: Regex                       = """<@(\w+)>""".r
   val timeRegex: Regex                         = "[0-2][0-9]:[0-5][0-9]".r
   val timeFormatter: DateTimeFormatter         = DateTimeFormatter.ofPattern("HH:mm")

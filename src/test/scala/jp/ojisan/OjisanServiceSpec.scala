@@ -15,9 +15,9 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
       val s = new OjisanService {
         override val repo: OjisanRepository = OjisanRepositoryMock(
           ojisanIdMock = "ojisanId",
-          onMessageMock = (cb: MessageEntity => IO[Unit]) =>
+          onMessageMock = (cb: MessageValue => IO[Unit]) =>
             cb(
-              new MessageEntity(
+              new MessageValue(
                 SlackMessagePostedMock(
                   messageContent = "<@ojisanId> mentionedOjisan",
                   channel = SlackChannelMock("id")
@@ -41,9 +41,9 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
       val s = new OjisanService {
         override val repo: OjisanRepository = OjisanRepositoryMock(
           ojisanIdMock = "ojisanId",
-          onMessageMock = (cb: MessageEntity => IO[Unit]) =>
+          onMessageMock = (cb: MessageValue => IO[Unit]) =>
             cb(
-              new MessageEntity(
+              new MessageValue(
                 SlackMessagePostedMock(
                   messageContent = "<@chigauOjisan> ojisan?",
                   channel = SlackChannelMock()
@@ -66,9 +66,9 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
         override def choiceEmoji(): String = "emoji"
         override val repo: OjisanRepository = OjisanRepositoryMock(
           ojisanIdMock = "ojisanId",
-          onMessageMock = (cb: MessageEntity => IO[Unit]) =>
+          onMessageMock = (cb: MessageValue => IO[Unit]) =>
             cb(
-              new MessageEntity(
+              new MessageValue(
                 SlackMessagePostedMock(
                   channel = SlackChannelMock(id = "ch"),
                   ts = "1234567"
@@ -92,9 +92,9 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
         override def rand100: Int = 60 // ok
         override val repo: OjisanRepository = OjisanRepositoryMock(
           ojisanIdMock = "ojisanId",
-          onMessageMock = (cb: MessageEntity => IO[Unit]) =>
+          onMessageMock = (cb: MessageValue => IO[Unit]) =>
             cb(
-              new MessageEntity(
+              new MessageValue(
                 SlackMessagePostedMock(
                   user = SlackUserMock(id = "ojisanId") // 自分の発言
                 )
@@ -108,7 +108,7 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
       val sNg = new OjisanService {
         override def rand100: Int = 10 // ng
         override val repo: OjisanRepository = OjisanRepositoryMock(
-          onMessageMock = (cb: MessageEntity => IO[Unit]) => cb(new MessageEntity(SlackMessagePostedMock())),
+          onMessageMock = (cb: MessageValue => IO[Unit]) => cb(new MessageValue(SlackMessagePostedMock())),
           addReactionToMessageMock = (_, _, _) => throw new AssertionError("こないで〜〜〜")
         )
       }
