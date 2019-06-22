@@ -4,20 +4,20 @@ import cats.effect.{Async, IO}
 import com.typesafe.scalalogging.LazyLogging
 import com.ullink.slack.simpleslackapi.impl.SlackSessionFactory
 import com.ullink.slack.simpleslackapi.replies.SlackMessageReply
-import com.ullink.slack.simpleslackapi.{SlackChannel, SlackSession, SlackUser}
+import com.ullink.slack.simpleslackapi.{SlackChannel, SlackSession}
 
 import scala.collection.JavaConverters._
 
 trait OjisanRepository extends LazyLogging {
   val session: SlackSession
-  lazy val ojisanId: String    = session.sessionPersona().getId
+  lazy val ojisan: UserValue   = UserValue(session.sessionPersona().getId)
   lazy val emojis: Set[String] = session.listEmoji().getReply.getEmojis.keySet().asScala.toSet
 
-  def findUser(userId: String): Option[SlackUser] =
-    Option(session.findUserById(userId))
+  def findUser(user: UserValue): Option[UserValue] =
+    Option(session.findUserById(user.id)).map(UserValue(_))
 
-  def filterOtherUserIds(userIds: Seq[String]): Seq[String] =
-    userIds.filter(_ != ojisanId)
+  def filterOjisanIgai(users: Seq[UserValue]): Seq[UserValue] =
+    users.filter(_ != ojisan)
 
   def addReactionToMessage(channel: SlackChannel, ts: String, emoji: String): IO[Unit] =
     IO {
