@@ -8,15 +8,15 @@ import org.scalatest.{BeforeAndAfterEach, FunSpec}
 
 import scala.concurrent.duration._
 
-class TimerServiceSpec extends FunSpec with BeforeAndAfterEach {
+class ReservationTimeValueSpec extends FunSpec with BeforeAndAfterEach {
   override def beforeEach() {}
   override def afterEach() {}
 
   describe("calcRemainingSeconds") {
-    it("あってる") {
+    it("残り時間あってる") {
       val reservationTime = LocalTime.of(10, 31)
       val now             = LocalTime.of(10, 30, 30)
-      val df              = TimerService.calcRemainingSeconds(reservationTime, IO(now)).unsafeRunSync()
+      val df              = ReservationTimeValue(reservationTime).calcRemainingSeconds(IO(now)).unsafeRunSync()
       df match {
         case None    => throw new AssertionError("こないで〜〜")
         case Some(t) => t should be(30.seconds)

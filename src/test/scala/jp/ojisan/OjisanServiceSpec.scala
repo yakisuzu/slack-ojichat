@@ -117,5 +117,5 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
     }
   }
 
-  describe("debugMessage") { it("TODO") {} }
+  describe("mentionRequest") {}
 }

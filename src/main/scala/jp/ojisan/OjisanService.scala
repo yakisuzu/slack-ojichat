@@ -10,8 +10,8 @@ import scala.util.Random
 
 trait OjisanService extends LazyLogging {
   val repo: OjisanRepository
-  val messageContentReservation: MessageContentReservationService = MessageContentReservationService()
-  val messageContentUser: MessageContentUserService               = MessageContentUserService()
+  val messageContentReservation: MessageContentReservationTimeService = MessageContentReservationTimeService()
+  val messageContentUser: MessageContentUserService                   = MessageContentUserService()
 
   private val rand: Random = new Random()
   def rand100: Int         = rand nextInt 100
@@ -38,14 +38,15 @@ trait OjisanService extends LazyLogging {
       }
     }
 
-  def mentionRequest(ojiTalk: String => String)(implicit ec: ExecutionContext, sc: ScheduledExecutorService): IO[Unit] =
+  def mentionRequest(ojiTalk: String => String)(implicit ec: ExecutionContext, sc: ScheduledExecutorService): IO[Unit] = {
+    val wait = WaitService()(ec, sc)
     repo.onMessage { message =>
       (messageContentUser.contentToUsers(message), messageContentReservation.contentToReservationTime(message)) match {
         case _ if !(message hasMention repo.ojisan)             => IO.unit // オジサンあてじゃない
         case (users, _) if repo.filterOjisanIgai(users).isEmpty => IO.unit // 誰にもメンションがない
         case (_, None)                                          => IO.unit // 時間指定ない
         case (users, Some(reservationTime)) =>
-          TimerService.calcRemainingSeconds(reservationTime).flatMap {
+          reservationTime.calcRemainingSeconds().flatMap {
             case None =>
               repo
                 .sendMessage(message.channel, s"$reservationTime は過ぎてるよ〜")
@@ -53,7 +54,7 @@ trait OjisanService extends LazyLogging {
             case Some(remainingSeconds) =>
               for {
                 _ <- repo.sendMessage(message.channel, s"$reservationTime になったら教えるネ")
-                _ <- TimerService()(ec, sc).sleepIO(remainingSeconds) {
+                _ <- wait.sleepAndRunAsync(remainingSeconds) {
                   for {
                     contentUserIds <- IO(repo.filterOjisanIgai(users).map(_.contentUserId).mkString(" "))
                     _              <- repo.sendMessage(message.channel, ojiTalk(contentUserIds))
@@ -63,6 +64,7 @@ trait OjisanService extends LazyLogging {
           }
       }
     }
+  }
 
   def choiceEmoji(): String = {
     val i = randN(repo.emojis.size)
