@@ -58,14 +58,14 @@ package object ojisan {
 
   private[ojisan] object OjisanRepositoryMock {
     def apply(
-        ojisanIdMock: String = "o",
-        onMessageMock: (MessageEntity => IO[Unit]) => IO[Unit] = null,
+        ojisanMock: UserValue = UserValue("oji"),
+        onMessageMock: (MessageValue => IO[Unit]) => IO[Unit] = null,
         sendMessageMock: (SlackChannel, String) => IO[SlackMessageReply] = null,
         addReactionToMessageMock: (SlackChannel, String, String) => IO[Unit] = null
     ): OjisanRepository = new OjisanRepository {
       override val session: SlackSession                                                = null
-      override lazy val ojisanId: String                                                = ojisanIdMock
-      override def onMessage(cb: MessageEntity => IO[Unit]): IO[Unit]                   = onMessageMock(cb)
+      override lazy val ojisan: UserValue                                               = ojisanMock
+      override def onMessage(cb: MessageValue => IO[Unit]): IO[Unit]                    = onMessageMock(cb)
       override def sendMessage(channel: SlackChannel, m: String): IO[SlackMessageReply] = sendMessageMock(channel, m)
       override def addReactionToMessage(
           channel: SlackChannel,

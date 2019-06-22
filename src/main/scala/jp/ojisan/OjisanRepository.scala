@@ -4,40 +4,40 @@ import cats.effect.{Async, IO}
 import com.typesafe.scalalogging.LazyLogging
 import com.ullink.slack.simpleslackapi.impl.SlackSessionFactory
 import com.ullink.slack.simpleslackapi.replies.SlackMessageReply
-import com.ullink.slack.simpleslackapi.{SlackChannel, SlackSession, SlackUser}
+import com.ullink.slack.simpleslackapi.{SlackChannel, SlackSession}
 
 import scala.collection.JavaConverters._
 
 trait OjisanRepository extends LazyLogging {
   val session: SlackSession
-  lazy val ojisanId: String    = session.sessionPersona().getId
+  lazy val ojisan: UserValue   = UserValue(session.sessionPersona().getId)
   lazy val emojis: Set[String] = session.listEmoji().getReply.getEmojis.keySet().asScala.toSet
 
-  def findUser(userId: String): Option[SlackUser] =
-    Option(session.findUserById(userId))
+  def findUser(user: UserValue): Option[UserValue] =
+    Option(session.findUserById(user.id)).map(UserValue(_))
 
-  def filterOtherUserIds(userIds: Seq[String]): Seq[String] =
-    userIds.filter(_ != ojisanId)
+  def filterOjisanIgai(users: Seq[UserValue]): Seq[UserValue] =
+    users.filter(_ != ojisan)
 
   def addReactionToMessage(channel: SlackChannel, ts: String, emoji: String): IO[Unit] =
     IO {
       session.addReactionToMessage(channel, ts, emoji)
     }.map(_ => ())
 
-  def onMessage(cb: (MessageEntity, SlackSession) => IO[Unit]): IO[Unit] = IO {
+  def onMessage(cb: (MessageValue, SlackSession) => IO[Unit]): IO[Unit] = IO {
     session.addMessagePostedListener { (event, s) =>
-      cb(MessageEntity(event), s) unsafeRunSync
+      cb(MessageValue(event), s) unsafeRunSync
     }
   }
 
-  def onMessage(cb: MessageEntity => IO[Unit]): IO[Unit] =
+  def onMessage(cb: MessageValue => IO[Unit]): IO[Unit] =
     onMessage { (event, _) =>
       cb(event)
     }
 
-  def onMessageAsync(): IO[MessageEntity] = Async[IO].async { cb =>
+  def onMessageAsync(): IO[MessageValue] = Async[IO].async { cb =>
     session.addMessagePostedListener { (event, _) =>
-      cb(Right(MessageEntity(event)))
+      cb(Right(MessageValue(event)))
     }
   }
 

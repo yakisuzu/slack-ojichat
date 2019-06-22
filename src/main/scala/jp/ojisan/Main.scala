@@ -6,7 +6,6 @@ import cats.data.EitherT
 import cats.effect.{ConcurrentEffect, ExitCode, IO, IOApp}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
-import com.ullink.slack.simpleslackapi.SlackUser
 
 import scala.concurrent.ExecutionContext
 
@@ -32,8 +31,8 @@ object Main extends IOApp with LazyLogging {
             _ <- ojisanService.debugMessage()
 
             // オジサンはかまってくれると嬉しい
-            _ <- ojisanService.mentionedMessage { user: SlackUser =>
-              ojichatService.getTalk(Some(user.getRealName)).unsafeRunSync()
+            _ <- ojisanService.mentionedMessage { user: UserValue =>
+              ojichatService.getTalk(Some(user.realName)).unsafeRunSync()
             }
 
             // オジサンはかまいたい

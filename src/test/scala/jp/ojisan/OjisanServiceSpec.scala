@@ -14,47 +14,47 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
     it("ojisan宛ダヨ") {
       val s = new OjisanService {
         override val repo: OjisanRepository = OjisanRepositoryMock(
-          ojisanIdMock = "ojisanId",
-          onMessageMock = (cb: MessageEntity => IO[Unit]) =>
+          ojisanMock = UserValue("ojisanId"),
+          onMessageMock = (cb: MessageValue => IO[Unit]) =>
             cb(
-              new MessageEntity(
-                SlackMessagePostedMock(
-                  messageContent = "<@ojisanId> mentionedOjisan",
-                  channel = SlackChannelMock("id")
-                )
+              new MessageValue(
+                channel = SlackChannelMock("id"),
+                timestamp = "",
+                sender = null,
+                content = "<@ojisanId> mentionedOjisan"
               )
             ),
           sendMessageMock = (c: SlackChannel, m: String) =>
             IO {
               c.getId should be("id")
-              m should be("sendContext")
+              m should be("sendContent")
               SlackMessageReplyMock(ok = true)
             }
         )
       }
       s.mentionedMessage { _ =>
-        "sendContext"
+        "sendContent"
       } unsafeRunSync
     }
 
     it("ojisan宛じゃないヨ") {
       val s = new OjisanService {
         override val repo: OjisanRepository = OjisanRepositoryMock(
-          ojisanIdMock = "ojisanId",
-          onMessageMock = (cb: MessageEntity => IO[Unit]) =>
+          ojisanMock = UserValue("ojisanId"),
+          onMessageMock = (cb: MessageValue => IO[Unit]) =>
             cb(
-              new MessageEntity(
-                SlackMessagePostedMock(
-                  messageContent = "<@chigauOjisan> ojisan?",
-                  channel = SlackChannelMock()
-                )
+              new MessageValue(
+                channel = SlackChannelMock(),
+                timestamp = "",
+                sender = null,
+                content = "<@chigauOjisan> ojisan?"
               )
             ),
           sendMessageMock = (_, _) => throw new AssertionError("こないで〜〜")
         )
       }
       s.mentionedMessage { _ =>
-        "sendContext"
+        "sendContent"
       } unsafeRunSync
     }
   }
@@ -65,14 +65,14 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
         override def rand100: Int          = 10 // ok
         override def choiceEmoji(): String = "emoji"
         override val repo: OjisanRepository = OjisanRepositoryMock(
-          ojisanIdMock = "ojisanId",
-          onMessageMock = (cb: MessageEntity => IO[Unit]) =>
+          ojisanMock = UserValue("ojisanId"),
+          onMessageMock = (cb: MessageValue => IO[Unit]) =>
             cb(
-              new MessageEntity(
-                SlackMessagePostedMock(
-                  channel = SlackChannelMock(id = "ch"),
-                  ts = "1234567"
-                )
+              new MessageValue(
+                channel = SlackChannelMock(id = "ch"),
+                timestamp = "1234567",
+                sender = null,
+                content = ""
               )
             ),
           addReactionToMessageMock = (channel: SlackChannel, ts: String, emoji: String) =>
@@ -84,20 +84,21 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
             }
         )
       }
-      s kimagureReaction() unsafeRunSync
+      s kimagureReaction () unsafeRunSync
     }
 
     it("反応しない") {
       val sSelf = new OjisanService {
         override def rand100: Int = 60 // ok
         override val repo: OjisanRepository = OjisanRepositoryMock(
-          ojisanIdMock = "ojisanId",
-          onMessageMock = (cb: MessageEntity => IO[Unit]) =>
+          ojisanMock = UserValue("ojisanId"),
+          onMessageMock = (cb: MessageValue => IO[Unit]) =>
             cb(
-              new MessageEntity(
-                SlackMessagePostedMock(
-                  user = SlackUserMock(id = "ojisanId") // 自分の発言
-                )
+              new MessageValue(
+                channel = null,
+                timestamp = "",
+                sender = UserValue("ojisanId"), // 自分の発言
+                content = ""
               )
             ),
           addReactionToMessageMock = (_, _, _) => throw new AssertionError("こないで〜〜〜")
@@ -108,7 +109,7 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
       val sNg = new OjisanService {
         override def rand100: Int = 10 // ng
         override val repo: OjisanRepository = OjisanRepositoryMock(
-          onMessageMock = (cb: MessageEntity => IO[Unit]) => cb(new MessageEntity(SlackMessagePostedMock())),
+          onMessageMock = (cb: MessageValue => IO[Unit]) => cb(MessageValue(SlackMessagePostedMock())),
           addReactionToMessageMock = (_, _, _) => throw new AssertionError("こないで〜〜〜")
         )
       }
@@ -116,5 +117,5 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
     }
   }
 
-  describe("debugMessage") { it("TODO") {} }
+  describe("mentionRequest") {}
 }

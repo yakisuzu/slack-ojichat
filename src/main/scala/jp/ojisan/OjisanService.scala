@@ -4,23 +4,24 @@ import java.util.concurrent.ScheduledExecutorService
 
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
-import com.ullink.slack.simpleslackapi.SlackUser
 
 import scala.concurrent.ExecutionContext
 import scala.util.Random
 
 trait OjisanService extends LazyLogging {
   val repo: OjisanRepository
+  val messageContentReservation: MessageContentReservationTimeService = MessageContentReservationTimeService()
+  val messageContentUser: MessageContentUserService                   = MessageContentUserService()
 
   private val rand: Random = new Random()
   def rand100: Int         = rand nextInt 100
   def randN(n: Int): Int   = rand nextInt n
 
-  def mentionedMessage(makeMessage: SlackUser => String): IO[Unit] =
+  def mentionedMessage(makeMessage: UserValue => String): IO[Unit] =
     repo.onMessage { message =>
       message match {
-        case _ if !(message hasMention repo.ojisanId) => IO.unit // オジサンあてじゃない
-        case _                                        =>
+        case _ if !(message hasMention repo.ojisan) => IO.unit // オジサンあてじゃない
+        case _                                      =>
           // FIXME メッセージ送信時刻の保持
           repo
             .sendMessage(message.channel, makeMessage(message.sender))
@@ -30,21 +31,22 @@ trait OjisanService extends LazyLogging {
 
   def kimagureReaction(): IO[Unit] =
     repo.onMessage { message =>
-      (message isTalk repo.ojisanId, rand100) match {
+      (message talkedBy repo.ojisan, rand100) match {
         case (ok, _) if ok    => IO.unit // 自分の発言にはリアクションしない
         case (_, n) if n < 50 => IO.unit // 気まぐれで反応しない
-        case _                => repo.addReactionToMessage(message.channel, message.ts, choiceEmoji())
+        case _                => repo.addReactionToMessage(message.channel, message.timestamp, choiceEmoji())
       }
     }
 
-  def mentionRequest(ojiTalk: String => String)(implicit ec: ExecutionContext, sc: ScheduledExecutorService): IO[Unit] =
+  def mentionRequest(ojiTalk: String => String)(implicit ec: ExecutionContext, sc: ScheduledExecutorService): IO[Unit] = {
+    val wait = WaitService()(ec, sc)
     repo.onMessage { message =>
-      (message.contextToUserIds, message.contextToLocalTime) match {
-        case _ if !(message hasMention repo.ojisanId)                 => IO.unit // オジサンあてじゃない
-        case (userIds, _) if repo.filterOtherUserIds(userIds).isEmpty => IO.unit // 誰にもメンションがない
-        case (_, None)                                                => IO.unit // 時間指定ない
-        case (userIds, Some(reservationTime)) =>
-          TimerService.calcRemainingSeconds(reservationTime).flatMap {
+      (messageContentUser.contentToUsers(message), messageContentReservation.contentToReservationTime(message)) match {
+        case _ if !(message hasMention repo.ojisan)             => IO.unit // オジサンあてじゃない
+        case (users, _) if repo.filterOjisanIgai(users).isEmpty => IO.unit // 誰にもメンションがない
+        case (_, None)                                          => IO.unit // 時間指定ない
+        case (users, Some(reservationTime)) =>
+          reservationTime.calcRemainingSeconds().flatMap {
             case None =>
               repo
                 .sendMessage(message.channel, s"$reservationTime は過ぎてるよ〜")
@@ -52,16 +54,17 @@ trait OjisanService extends LazyLogging {
             case Some(remainingSeconds) =>
               for {
                 _ <- repo.sendMessage(message.channel, s"$reservationTime になったら教えるネ")
-                _ <- TimerService()(ec, sc).sleepIO(remainingSeconds) {
+                _ <- wait.sleepAndRunAsync(remainingSeconds) {
                   for {
-                    contextUsers <- IO(repo.filterOtherUserIds(userIds).map(MessageEntity.toContextUserId).mkString(" "))
-                    _            <- repo.sendMessage(message.channel, ojiTalk(contextUsers))
+                    contentUserIds <- IO(repo.filterOjisanIgai(users).map(_.contentUserId).mkString(" "))
+                    _              <- repo.sendMessage(message.channel, ojiTalk(contentUserIds))
                   } yield ()
                 }
               } yield ()
           }
       }
     }
+  }
 
   def choiceEmoji(): String = {
     val i = randN(repo.emojis.size)
@@ -70,21 +73,12 @@ trait OjisanService extends LazyLogging {
 
   def debugMessage(): IO[Unit] =
     repo.onMessage { message =>
-      for {
-        _ <- debug(message.sender)
-        _ <- debug(message)
-      } yield ()
+      debug(message)
     }
 
-  def debug(u: SlackUser): IO[Unit] = IO {
+  def debug(m: MessageValue): IO[Unit] = IO {
     logger.debug(
-      s"{ userId: ${u.getId}, userName: ${u.getUserName}, realName: ${u.getRealName}, userTitle: ${u.getUserTitle} }"
-    )
-  }
-
-  def debug(m: MessageEntity): IO[Unit] = IO {
-    logger.debug(
-      s"{ ts: ${m.ts}, channelId: ${m.channel.getId}, channelName: ${m.channel.getName}, content: ${m.context} }"
+      s"{ ts: ${m.timestamp}, channelId: ${m.channel.getId}, channelName: ${m.channel.getName}, senderUserId: ${m.sender.id}, senderUserRealName: ${m.sender.realName}, content: ${m.content} }"
     )
   }
 }
