@@ -49,11 +49,11 @@ trait OjisanService extends LazyLogging {
           reservationTime.calcRemainingSeconds().flatMap {
             case None =>
               repo
-                .sendMessage(message.channel, s"$reservationTime は過ぎてるよ〜")
+                .sendMessage(message.channel, s"${reservationTime.reservationTime} は過ぎてるよ〜")
                 .map(_ => ())
             case Some(remainingSeconds) =>
               for {
-                _ <- repo.sendMessage(message.channel, s"$reservationTime になったら教えるネ")
+                _ <- repo.sendMessage(message.channel, s"${reservationTime.reservationTime} になったら教えるネ")
                 _ <- wait.sleepAndRunAsync(remainingSeconds) {
                   for {
                     contentUserIds <- IO(repo.filterOjisanIgai(users).map(_.contentUserId).mkString(" "))
