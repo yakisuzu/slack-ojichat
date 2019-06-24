@@ -16,7 +16,7 @@ object MessageValue {
     MessageValue(
       channel = message.getChannel,
       timestamp = message.getTimestamp,
-      sender = UserValue(message.getSender.getId),
+      sender = UserValue(message.getSender),
       content = message.getMessageContent
     )
 }

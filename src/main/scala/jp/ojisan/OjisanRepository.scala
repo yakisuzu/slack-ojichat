@@ -10,7 +10,7 @@ import scala.collection.JavaConverters._
 
 trait OjisanRepository extends LazyLogging {
   val session: SlackSession
-  lazy val ojisan: UserValue   = UserValue(session.sessionPersona().getId)
+  lazy val ojisan: UserValue   = UserValue(session.sessionPersona())
   lazy val emojis: Set[String] = session.listEmoji().getReply.getEmojis.keySet().asScala.toSet
 
   def findUser(user: UserValue): Option[UserValue] =
