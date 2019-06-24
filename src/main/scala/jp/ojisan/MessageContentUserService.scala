@@ -10,7 +10,7 @@ trait MessageContentUserService {
       .findAllMatchIn(message.content)
       .toSeq
       .map(_.subgroups.head)
-      .map(UserValue(_))
+      .map(UserValue(_, ""))
 }
 
 object MessageContentUserService {

@@ -58,7 +58,7 @@ package object ojisan {
 
   private[ojisan] object OjisanRepositoryMock {
     def apply(
-        ojisanMock: UserValue = UserValue("oji"),
+        ojisanMock: UserValue = UserValue("ojiId", "ojiName"),
         onMessageMock: (MessageValue => IO[Unit]) => IO[Unit] = null,
         sendMessageMock: (SlackChannel, String) => IO[SlackMessageReply] = null,
         addReactionToMessageMock: (SlackChannel, String, String) => IO[Unit] = null
