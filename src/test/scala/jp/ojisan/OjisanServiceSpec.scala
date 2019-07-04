@@ -72,8 +72,8 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
   describe("kimagureReaction") {
     it("反応できた") {
       val s = new OjisanService {
-        override def rand100: Int          = 10 // ok
-        override def choiceEmoji(): String = "emoji"
+        override def randN(n: Int): IO[Int]    = IO(10) // ok
+        override def choiceEmoji(): IO[String] = IO("emoji")
         override implicit val repository: OjisanRepository = OjisanRepositoryMock(
           ojisanMock = UserValue("ojisanId", ""),
           onMessageMock = (cb: MessageValue => IO[Unit]) =>
@@ -103,7 +103,8 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
 
     it("反応しない") {
       val sSelf = new OjisanService {
-        override def rand100: Int = 60 // ok
+        override def randN(n: Int): IO[Int] = IO(10) // ok
+        override def choiceEmoji(): IO[String] = IO("")
         override implicit val repository: OjisanRepository = OjisanRepositoryMock(
           ojisanMock = UserValue("ojisanId", ""),
           onMessageMock = (cb: MessageValue => IO[Unit]) =>
@@ -125,7 +126,8 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
       sSelf.kimagureReaction() unsafeRunSync
 
       val sNg = new OjisanService {
-        override def rand100: Int = 10 // ng
+        override def randN(n: Int): IO[Int] = IO(60) // ng
+        override def choiceEmoji(): IO[String] = IO("")
         override implicit val repository: OjisanRepository = OjisanRepositoryMock(
           onMessageMock = (cb: MessageValue => IO[Unit]) => cb(MessageValue(SlackMessagePostedMock())),
           addReactionToMessageMock = (_, _, _) => throw new AssertionError("こないで〜〜〜")

@@ -15,30 +15,30 @@ trait OjisanService extends LazyLogging {
   val messageContentReservation: MessageContentReservationTimeService = MessageContentReservationTimeService()
   val messageContentUser: MessageContentUserService                   = MessageContentUserService()
 
-  private val rand: Random = new Random()
-  def rand100: Int         = rand nextInt 100
-  def randN(n: Int): Int   = rand nextInt n
+  private val rand: Random   = new Random()
+  def randN(n: Int): IO[Int] = IO(rand nextInt n)
 
   def mentionedMessage(): IO[Unit] =
-    repository.onMessage { message =>
-      message match {
-        case _ if !(message hasMention repository.ojisan) => IO.unit // オジサンあてじゃない
-        case _ =>
-          for {
-            ojiTalk <- ojichat.getTalk(Some(message.sender.realName))
-            // FIXME メッセージ送信時刻の保持
-            _ <- repository.sendMessage(message.channel, ojiTalk)
-          } yield ()
-      }
+    repository.onMessage {
+      case message if !(message hasMention repository.ojisan) => IO.unit // オジサンあてじゃない
+      case message =>
+        for {
+          ojiTalk <- ojichat.getTalk(Some(message.sender.realName))
+          // FIXME メッセージ送信時刻の保持
+          _ <- repository.sendMessage(message.channel, ojiTalk)
+        } yield ()
     }
 
   def kimagureReaction(): IO[Unit] =
-    repository.onMessage { message =>
-      (message talkedBy repository.ojisan, rand100) match {
-        case (ok, _) if ok    => IO.unit // 自分の発言にはリアクションしない
-        case (_, n) if n < 50 => IO.unit // 気まぐれで反応しない
-        case _                => repository.addReactionToMessage(message.channel, message.timestamp, choiceEmoji())
-      }
+    repository.onMessage {
+      case message if message talkedBy repository.ojisan => IO.unit // 自分の発言にはリアクションしない
+      case message =>
+        for {
+          ok    <- randN(100).map(_ < 50) // 気まぐれで反応しない
+          emoji <- choiceEmoji()
+          _ <- if (ok) repository.addReactionToMessage(message.channel, message.timestamp, emoji)
+          else IO.unit
+        } yield ()
     }
 
   def mentionRequest()(implicit ec: ExecutionContext, sc: ScheduledExecutorService): IO[Unit] = {
@@ -70,10 +70,11 @@ trait OjisanService extends LazyLogging {
     }
   }
 
-  def choiceEmoji(): String = {
-    val i = randN(repository.emojis.size)
-    repository.emojis.zipWithIndex.find(_._2 == i).map(_._1).get
-  }
+  def choiceEmoji(): IO[String] =
+    for {
+      i     <- randN(repository.emojis.size)
+      emoji <- IO(repository.emojis.zipWithIndex.find(_._2 == i).map(_._1).get)
+    } yield emoji
 
   def debugMessage(): IO[Unit] =
     repository.onMessage { message =>
