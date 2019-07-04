@@ -19,8 +19,8 @@ object Main extends IOApp with LazyLogging {
   lazy val ojisanName: String  = conf.getString("app.name")
   lazy val ojisanToken: String = conf.getString("app.slackToken")
 
-  val ojisanService  = OjisanService(ojisanToken)
   val ojichatService = OjichatService()
+  val ojisanService: OjisanService = OjisanService(ojisanToken)(ojichatService)
 
   def run(args: List[String]): IO[ExitCode] =
     F.toIO {
@@ -31,17 +31,13 @@ object Main extends IOApp with LazyLogging {
             _ <- ojisanService.debugMessage()
 
             // オジサンはかまってくれると嬉しい
-            _ <- ojisanService.mentionedMessage { user: UserValue =>
-              ojichatService.getTalk(Some(user.realName)).unsafeRunSync()
-            }
+            _ <- ojisanService.mentionedMessage()
 
             // オジサンはかまいたい
             _ <- ojisanService.kimagureReaction()
 
             // オジサンはやさしい
-            _ <- ojisanService.mentionRequest { at: String =>
-              ojichatService.getTalk(Some(at)).unsafeRunSync()
-            }
+            _ <- ojisanService.mentionRequest
 
             _ <- IO(logger.info("オジサン準備終わったヨ"))
           } yield ()
