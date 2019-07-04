@@ -13,7 +13,7 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
   describe("mentionedMessage") {
     it("ojisan宛ダヨ") {
       val s = new OjisanService {
-        override val repo: OjisanRepository = OjisanRepositoryMock(
+        override val repository: OjisanRepository = OjisanRepositoryMock(
           ojisanMock = UserValue("ojisanId", ""),
           onMessageMock = (cb: MessageValue => IO[Unit]) =>
             cb(
@@ -39,7 +39,7 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
 
     it("ojisan宛じゃないヨ") {
       val s = new OjisanService {
-        override val repo: OjisanRepository = OjisanRepositoryMock(
+        override val repository: OjisanRepository = OjisanRepositoryMock(
           ojisanMock = UserValue("ojisanId", ""),
           onMessageMock = (cb: MessageValue => IO[Unit]) =>
             cb(
@@ -64,7 +64,7 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
       val s = new OjisanService {
         override def rand100: Int          = 10 // ok
         override def choiceEmoji(): String = "emoji"
-        override val repo: OjisanRepository = OjisanRepositoryMock(
+        override val repository: OjisanRepository = OjisanRepositoryMock(
           ojisanMock = UserValue("ojisanId", ""),
           onMessageMock = (cb: MessageValue => IO[Unit]) =>
             cb(
@@ -90,7 +90,7 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
     it("反応しない") {
       val sSelf = new OjisanService {
         override def rand100: Int = 60 // ok
-        override val repo: OjisanRepository = OjisanRepositoryMock(
+        override val repository: OjisanRepository = OjisanRepositoryMock(
           ojisanMock = UserValue("ojisanId", ""),
           onMessageMock = (cb: MessageValue => IO[Unit]) =>
             cb(
@@ -108,7 +108,7 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
 
       val sNg = new OjisanService {
         override def rand100: Int = 10 // ng
-        override val repo: OjisanRepository = OjisanRepositoryMock(
+        override val repository: OjisanRepository = OjisanRepositoryMock(
           onMessageMock = (cb: MessageValue => IO[Unit]) => cb(MessageValue(SlackMessagePostedMock())),
           addReactionToMessageMock = (_, _, _) => throw new AssertionError("こないで〜〜〜")
         )
