@@ -61,7 +61,7 @@ trait OjisanService extends LazyLogging {
                 _ <- repository.sendMessage(message.channel, s"${reservationTime.reservationTime} になったら教えるネ")
                 _ <- wait.sleepAndRunAsync(remainingSeconds) {
                   for {
-                    contentUserIds <- IO(repository.filterOjisanIgai(users).map(_.contentUserId).mkString(" "))
+                    contentUserIds <- IO(repository.filterOjisanIgai(repository.filterOjisanIgai(users)).map(_.contentUserId).mkString(" "))
                     ojiTalk        <- ojichat.getTalk(Some(contentUserIds))
                     _              <- repository.sendMessage(message.channel, ojiTalk)
                   } yield ()
