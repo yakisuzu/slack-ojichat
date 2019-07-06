@@ -81,7 +81,7 @@ class OjisanServiceSpec extends FunSpec with BeforeAndAfterEach {
               new MessageValue(
                 channel = SlackChannelMock(id = "ch"),
                 timestamp = "1234567",
-                sender = null,
+                sender = UserValue("", ""),
                 content = ""
               )
             ),
