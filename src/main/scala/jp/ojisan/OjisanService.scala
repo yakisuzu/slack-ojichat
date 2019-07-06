@@ -22,28 +22,25 @@ trait OjisanService extends LazyLogging {
     repository.onMessage {
       case message if !(message hasMention repository.ojisan) => IO.unit // オジサンあてじゃない
       case message =>
-        for {
-          ojiTalk <- ojichat.getTalk(Some(message.sender.realName))
-          // FIXME メッセージ送信時刻の保持
-          _ <- repository.sendMessage(message.channel, ojiTalk)
-        } yield ()
+        ojichat
+          .getTalk(Some(message.sender.realName))
+          .flatMap { ojiTalk =>
+            // FIXME メッセージ送信時刻の保持
+            repository.sendMessage(message.channel, ojiTalk).map(_ => ())
+          }
     }
 
   def kimagureReaction(): IO[Unit] =
     repository.onMessage {
       case message if message talkedBy repository.ojisan => IO.unit // 自分の発言にはリアクションしない
       case message =>
-        for {
-          n <- randN(100)
-          _ <- n > 50 match {
-            case ng if ng => IO.unit // 気まぐれで反応しない
-            case _ =>
-              for {
-                emoji <- choiceEmoji()
-                _     <- repository.addReactionToMessage(message.channel, message.timestamp, emoji)
-              } yield ()
-          }
-        } yield ()
+        randN(100).flatMap {
+          case n if n > 50 => IO.unit // 気まぐれで反応しない
+          case _ =>
+            choiceEmoji().flatMap { emoji =>
+              repository.addReactionToMessage(message.channel, message.timestamp, emoji)
+            }
+        }
     }
 
   def mentionRequest()(implicit ec: ExecutionContext, sc: ScheduledExecutorService): IO[Unit] = {
@@ -76,10 +73,9 @@ trait OjisanService extends LazyLogging {
   }
 
   def choiceEmoji(): IO[String] =
-    for {
-      i     <- randN(repository.emojis.size)
-      emoji <- IO(repository.emojis.zipWithIndex.find(_._2 == i).map(_._1).get)
-    } yield emoji
+    randN(repository.emojis.size).map { i =>
+      repository.emojis.zipWithIndex.find(_._2 == i).map(_._1).get
+    }
 
   def debugMessage(): IO[Unit] =
     repository.onMessage { message =>
