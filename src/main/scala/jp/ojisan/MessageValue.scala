@@ -8,7 +8,7 @@ case class MessageValue(channel: SlackChannel, timestamp: String, sender: UserVa
     content contains user.id
 
   def talkedBy(user: UserValue): Boolean =
-    sender == user
+    sender.id == user.id
 }
 
 object MessageValue {

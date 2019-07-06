@@ -24,16 +24,11 @@ trait OjisanRepository extends LazyLogging {
       session.addReactionToMessage(channel, ts, emoji)
     }.map(_ => ())
 
-  def onMessage(cb: (MessageValue, SlackSession) => IO[Unit]): IO[Unit] = IO {
-    session.addMessagePostedListener { (event, s) =>
-      cb(MessageValue(event), s) unsafeRunSync
+  def onMessage(cb: MessageValue => IO[Unit]): IO[Unit] = IO {
+    session.addMessagePostedListener { (event, _) =>
+      cb(MessageValue(event)) unsafeRunSync
     }
   }
-
-  def onMessage(cb: MessageValue => IO[Unit]): IO[Unit] =
-    onMessage { (event, _) =>
-      cb(event)
-    }
 
   def onMessageAsync(): IO[MessageValue] = Async[IO].async { cb =>
     session.addMessagePostedListener { (event, _) =>
