@@ -34,10 +34,15 @@ trait OjisanService extends LazyLogging {
       case message if message talkedBy repository.ojisan => IO.unit // 自分の発言にはリアクションしない
       case message =>
         for {
-          ok    <- randN(100).map(_ < 50) // 気まぐれで反応しない
-          emoji <- choiceEmoji()
-          _ <- if (ok) repository.addReactionToMessage(message.channel, message.timestamp, emoji)
-          else IO.unit
+          n <- randN(100)
+          _ <- n > 50 match {
+            case ng if ng => IO.unit // 気まぐれで反応しない
+            case _ =>
+              for {
+                emoji <- choiceEmoji()
+                _     <- repository.addReactionToMessage(message.channel, message.timestamp, emoji)
+              } yield ()
+          }
         } yield ()
     }
 
