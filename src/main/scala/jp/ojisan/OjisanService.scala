@@ -1,11 +1,8 @@
 package jp.ojisan
 
-import java.util.concurrent.ScheduledExecutorService
-
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 
-import scala.concurrent.ExecutionContext
 import scala.util.Random
 
 trait OjisanService extends LazyLogging {
@@ -43,35 +40,6 @@ trait OjisanService extends LazyLogging {
         }
     }
 
-  def mentionRequest()(implicit ec: ExecutionContext, sc: ScheduledExecutorService): IO[Unit] = {
-    val wait = WaitService()(ec, sc)
-    repository.onMessage { message =>
-      (messageContentUser.contentToUsers(message), messageContentReservation.contentToReservationTime(message)) match {
-        case _ if !(message hasMention repository.ojisan)             => IO.unit // オジサンあてじゃない
-        case (users, _) if repository.filterOjisanIgai(users).isEmpty => IO.unit // 誰にもメンションがない
-        case (_, None)                                                => IO.unit // 時間指定ない
-        case (users, Some(reservationTime)) =>
-          reservationTime.calcRemainingSeconds().flatMap {
-            case None =>
-              repository
-                .sendMessage(message.channel, s"${reservationTime.reservationTime} は過ぎてるよ〜")
-                .map(_ => ())
-            case Some(remainingSeconds) =>
-              for {
-                _ <- repository.sendMessage(message.channel, s"${reservationTime.reservationTime} になったら教えるネ")
-                _ <- wait.sleepAndRunAsync(remainingSeconds) {
-                  for {
-                    contentUserIds <- IO(repository.filterOjisanIgai(repository.filterOjisanIgai(users)).map(_.contentUserId).mkString(" "))
-                    ojiTalk        <- ojichat.getTalk(Some(contentUserIds))
-                    _              <- repository.sendMessage(message.channel, ojiTalk)
-                  } yield ()
-                }
-              } yield ()
-          }
-      }
-    }
-  }
-
   def choiceEmoji(): IO[String] =
     randN(repository.emojis.size).map { i =>
       repository.emojis.zipWithIndex.find(_._2 == i).map(_._1).get
@@ -90,9 +58,13 @@ trait OjisanService extends LazyLogging {
 }
 
 object OjisanService {
-  def apply(ojisanToken: String)(implicit _ojichat: OjichatService): OjisanService =
+  def apply()(
+      implicit
+      _repository: OjisanRepository,
+      _ojichat: OjichatService
+  ): OjisanService =
     new OjisanService {
-      override implicit val repository: OjisanRepository = OjisanRepository(ojisanToken)
+      override implicit val repository: OjisanRepository = _repository
       override implicit val ojichat: OjichatService      = _ojichat
     }
 }

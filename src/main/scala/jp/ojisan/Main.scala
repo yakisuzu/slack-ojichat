@@ -11,16 +11,21 @@ import scala.concurrent.ExecutionContext
 
 object Main extends IOApp with LazyLogging {
   type F[A] = EitherT[IO, Throwable, A]
-  val F: ConcurrentEffect[F]                = implicitly[ConcurrentEffect[F]]
-  implicit val ec: ExecutionContext         = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(2))
-  implicit val sc: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
+  val F: ConcurrentEffect[F] = implicitly[ConcurrentEffect[F]]
 
   lazy val conf: Config        = ConfigFactory.load()
   lazy val ojisanName: String  = conf.getString("app.name")
   lazy val ojisanToken: String = conf.getString("app.slackToken")
 
-  val ojichatService = OjichatService()
-  val ojisanService: OjisanService = OjisanService(ojisanToken)(ojichatService)
+  implicit val ojichatService: OjichatService     = OjichatService()
+  implicit val ojisanRepository: OjisanRepository = OjisanRepository(ojisanToken)
+  implicit val ec: ExecutionContext               = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(2))
+  implicit val sc: ScheduledExecutorService       = Executors.newSingleThreadScheduledExecutor()
+
+  val ojisanService: OjisanService =
+    OjisanService()(ojisanRepository, ojichatService)
+  val ojisanMentionRequestService: OjisanMentionRequestService =
+    OjisanMentionRequestService()(ojisanRepository, ojichatService, ec, sc)
 
   def run(args: List[String]): IO[ExitCode] =
     F.toIO {
@@ -37,11 +42,10 @@ object Main extends IOApp with LazyLogging {
             _ <- ojisanService.kimagureReaction()
 
             // オジサンはやさしい
-            _ <- ojisanService.mentionRequest
+            _ <- ojisanMentionRequestService.mentionRequest()
 
             _ <- IO(logger.info("オジサン準備終わったヨ"))
-          } yield ()
+          } yield ExitCode.Success
         )
-        .map(_ => ExitCode.Success)
     }
 }

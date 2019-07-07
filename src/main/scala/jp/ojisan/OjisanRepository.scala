@@ -17,7 +17,7 @@ trait OjisanRepository extends LazyLogging {
     Option(session.findUserById(user.id)).map(UserValue(_))
 
   def filterOjisanIgai(users: Seq[UserValue]): Seq[UserValue] =
-    users.filter(_ != ojisan)
+    users.filter(_.id != ojisan.id)
 
   def addReactionToMessage(channel: SlackChannel, ts: String, emoji: String): IO[Unit] =
     IO {
