@@ -10,9 +10,12 @@ import com.ullink.slack.simpleslackapi.SlackChannel
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 
-trait OjisanMentionRequestService extends OjisanService with LazyLogging {
+trait OjisanMentionRequestService extends LazyLogging {
+  implicit val repository: OjisanRepository
+  implicit val ojichat: OjichatService
   implicit val ec: ExecutionContext
   implicit val sc: ScheduledExecutorService
+  implicit val messageContentReservation: MessageContentReservationService
 
   // lazyにしないと動かないのまじわからん
   private lazy val waitService = WaitService()(ec, sc)
@@ -27,7 +30,7 @@ trait OjisanMentionRequestService extends OjisanService with LazyLogging {
       return IO.unit
     }
 
-    val reservationUsers = contextToReservationUsers(message)
+    val reservationUsers = messageContentReservation.contextToReservationUsers(message, repository.ojisan)
     if (reservationUsers.isEmpty) {
       // 誰にもメンションがない
       return IO.unit
@@ -52,11 +55,6 @@ trait OjisanMentionRequestService extends OjisanService with LazyLogging {
             )
         }
     }
-  }
-
-  def contextToReservationUsers(m: MessageValue): Seq[UserValue] = {
-    val mentionUsers = messageContentUser.contentToUsers(m)
-    repository.filterOjisanIgai(mentionUsers)
   }
 
   def reservationTimePassed(c: SlackChannel, t: LocalTime): IO[Unit] =
@@ -92,9 +90,10 @@ object OjisanMentionRequestService {
       _sc: ScheduledExecutorService
   ): OjisanMentionRequestService =
     new OjisanMentionRequestService {
-      override implicit val repository: OjisanRepository = _repository
-      override implicit val ojichat: OjichatService      = _ojichat
-      override implicit val ec: ExecutionContext         = _ec
-      override implicit val sc: ScheduledExecutorService = _sc
+      override implicit val repository: OjisanRepository                                = _repository
+      override implicit val ojichat: OjichatService                                     = _ojichat
+      override implicit val ec: ExecutionContext                                        = _ec
+      override implicit val sc: ScheduledExecutorService                                = _sc
+      override implicit val messageContentReservation: MessageContentReservationService = MessageContentReservationService()
     }
 }

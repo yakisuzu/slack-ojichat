@@ -17,15 +17,17 @@ object Main extends IOApp with LazyLogging {
   lazy val ojisanName: String  = conf.getString("app.name")
   lazy val ojisanToken: String = conf.getString("app.slackToken")
 
-  implicit val ojichatService: OjichatService     = OjichatService()
+  implicit val ojichat: OjichatService            = OjichatService()
   implicit val ojisanRepository: OjisanRepository = OjisanRepository(ojisanToken)
   implicit val ec: ExecutionContext               = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(2))
   implicit val sc: ScheduledExecutorService       = Executors.newSingleThreadScheduledExecutor()
 
-  val ojisanService: OjisanService =
-    OjisanService()(ojisanRepository, ojichatService)
-  val ojisanMentionRequestService: OjisanMentionRequestService =
-    OjisanMentionRequestService()(ojisanRepository, ojichatService, ec, sc)
+  val ojisanMentionMessage: OjisanMentionMessageService =
+    OjisanMentionMessageService()(ojisanRepository, ojichat)
+  val ojisanKimagureReaction: OjisanKimagureReactionService =
+    OjisanKimagureReactionService()(ojisanRepository)
+  val ojisanMentionRequest: OjisanMentionRequestService =
+    OjisanMentionRequestService()(ojisanRepository, ojichat, ec, sc)
 
   def run(args: List[String]): IO[ExitCode] =
     F.toIO {
@@ -33,19 +35,34 @@ object Main extends IOApp with LazyLogging {
         .right(
           for {
             // debug
-            _ <- ojisanService.debugMessage()
+            _ <- debugMessage()
 
             // オジサンはかまってくれると嬉しい
-            _ <- ojisanService.mentionedMessage()
+            _ <- ojisanMentionMessage.mentionMessage()
 
             // オジサンはかまいたい
-            _ <- ojisanService.kimagureReaction()
+            _ <- ojisanKimagureReaction.kimagureReaction()
 
             // オジサンはやさしい
-            _ <- ojisanMentionRequestService.mentionRequest()
+            _ <- ojisanMentionRequest.mentionRequest()
 
             _ <- IO(logger.info("オジサン準備終わったヨ"))
           } yield ExitCode.Success
         )
     }
+
+  def debugMessage(): IO[Unit] = ojisanRepository.onMessage(debug)
+
+  def debug(m: MessageValue): IO[Unit] = IO {
+    logger.debug(
+      Map(
+        "ts"                 -> m.timestamp,
+        "channelId"          -> m.channel.getId,
+        "channelName"        -> m.channel.getName,
+        "senderUserId"       -> m.sender.id,
+        "senderUserRealName" -> m.sender.realName,
+        "content"            -> m.content
+      ).toString()
+    )
+  }
 }
