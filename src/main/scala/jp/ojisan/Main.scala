@@ -13,9 +13,10 @@ object Main extends IOApp with LazyLogging {
   type F[A] = EitherT[IO, Throwable, A]
   val F: ConcurrentEffect[F] = implicitly[ConcurrentEffect[F]]
 
-  lazy val conf: Config        = ConfigFactory.load()
-  lazy val ojisanName: String  = conf.getString("app.name")
-  lazy val ojisanToken: String = conf.getString("app.slackToken")
+  lazy val conf: Config                       = ConfigFactory.load()
+  lazy val ojisanName: String                 = conf.getString("app.name")
+  lazy val ojisanToken: String                = conf.getString("app.slackToken")
+  lazy val debugMessageMode: DebugMessageMode = DebugMessageMode(conf.getString("app.debug_message_mode"))
 
   implicit val ojichat: OjichatService            = OjichatService()
   implicit val ojisanRepository: OjisanRepository = OjisanRepository(ojisanToken)
@@ -35,7 +36,7 @@ object Main extends IOApp with LazyLogging {
         .right(
           for {
             // debug
-            _ <- debugMessage()
+            _ <- debugMessageMode.debugMessage(ojisanRepository)
 
             // オジサンはかまってくれると嬉しい
             _ <- ojisanMentionMessage.mentionMessage()
@@ -50,19 +51,4 @@ object Main extends IOApp with LazyLogging {
           } yield ExitCode.Success
         )
     }
-
-  def debugMessage(): IO[Unit] = ojisanRepository.onMessage(debug)
-
-  def debug(m: MessageValue): IO[Unit] = IO {
-    logger.debug(
-      Map(
-        "ts"                 -> m.timestamp,
-        "channelId"          -> m.channel.getId,
-        "channelName"        -> m.channel.getName,
-        "senderUserId"       -> m.sender.id,
-        "senderUserRealName" -> m.sender.realName,
-        "content"            -> m.content
-      ).toString()
-    )
-  }
 }
