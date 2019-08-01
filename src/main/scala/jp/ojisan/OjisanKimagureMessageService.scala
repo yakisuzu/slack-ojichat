@@ -37,13 +37,3 @@ object OjisanKimagureMessageService {
   }
 }
 
-// 純粋関数型とかいう闇
-//trait RNG {
-//  def nextInt: (Int, RNG)
-//}
-//
-//case class SimpleRNG(seed: Long) extends RNG {
-//  override def nextInt: (Int, RNG) = {
-//    ???
-//  }
-//}
