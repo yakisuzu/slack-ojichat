@@ -29,6 +29,8 @@ object Main extends IOApp with LazyLogging {
     OjisanKimagureReactionService()(ojisanRepository)
   val ojisanMentionRequest: OjisanMentionRequestService =
     OjisanMentionRequestService()(ojisanRepository, ojichat, ec, sc)
+  val ojisanKimagureMessage: OjisanKimagureMessageService =
+    OjisanKimagureMessageService()(ojisanRepository, ojichat)
 
   def run(args: List[String]): IO[ExitCode] =
     F.toIO {
@@ -46,6 +48,8 @@ object Main extends IOApp with LazyLogging {
 
             // オジサンはやさしい
             _ <- ojisanMentionRequest.mentionRequest()
+
+            _ <- ojisanKimagureMessage.kimagureMessage()
 
             _ <- IO(logger.info("オジサン準備終わったヨ"))
           } yield ExitCode.Success
