@@ -3,12 +3,17 @@ package jp.ojisan
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 
-sealed abstract class DebugMessageMode(val printMessage: Boolean) extends LazyLogging {
-  def debugMessage(ojisanRepository: OjisanRepository): IO[Unit] =
+sealed abstract class DebugMessageMode[F[_]](val printMessage: Boolean) extends LazyLogging {
+  type F[_] = IO[F[_]]
+
+  def debugMessage(ojisanRepository: OjisanRepository)(implicit io: IO[F]): F[Unit] =
     if (printMessage) ojisanRepository.onMessage(debug)
     else IO.unit
 
-  def debug(m: MessageValue): IO[Unit] = IO {
+
+//  def fmap[F[_], A, B](fa: F[A])(f: A => B)(implicit ft: Functor[F]) =
+
+  def debug(m: MessageValue): F[Unit] = IO {
     logger.debug(
       Map(
         "ts"                 -> m.timestamp,
@@ -23,12 +28,12 @@ sealed abstract class DebugMessageMode(val printMessage: Boolean) extends LazyLo
 }
 
 object DebugMessageMode {
-  def apply(mode: String): DebugMessageMode = mode match {
+  def apply[F <: IO[_]](mode: String): DebugMessageMode[F] = mode match {
     case m: String if m == "ON" => new DebugMessageModeOn
     case _                      => new DebugMessageModeOff
   }
 
 }
 
-case class DebugMessageModeOn()  extends DebugMessageMode(true)
-case class DebugMessageModeOff() extends DebugMessageMode(false)
+case class DebugMessageModeOn[F]()  extends DebugMessageMode[F](true)
+case class DebugMessageModeOff[F]() extends DebugMessageMode[F](false)

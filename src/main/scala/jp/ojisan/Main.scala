@@ -10,8 +10,8 @@ import com.typesafe.scalalogging.LazyLogging
 import scala.concurrent.ExecutionContext
 
 object Main extends IOApp with LazyLogging {
-  type F[A] = EitherT[IO, Throwable, A]
-  val F: ConcurrentEffect[F] = implicitly[ConcurrentEffect[F]]
+//  type F[A] = EitherT[IO, Throwable, A]
+//  val concurrentEffect: ConcurrentEffect[F] = implicitly[ConcurrentEffect[F]]
 
   lazy val conf: Config                       = ConfigFactory.load()
   lazy val ojisanName: String                 = conf.getString("app.name")
@@ -32,10 +32,17 @@ object Main extends IOApp with LazyLogging {
   val ojisanMentionRequest: OjisanMentionRequestService =
     OjisanMentionRequestService()(ojisanRepository, ojichat, ec, sc)
 
+  // IO, Effect = 副作用を抑制する
+  // Future = 非同期
+  // Either = 状態
+  // TODO 全体的Fにする = trait Xxx[F[_]] ... implicit val F: Effect[F]
+  // TODO 全体的にMainまでEitherとFutureを持ってくる
+  // TODO Mainで
+
   def run(args: List[String]): IO[ExitCode] =
-    F.toIO {
-      EitherT
-        .right(
+//    concurrentEffect.toIO {
+//      EitherT
+//        .right(
           for {
             // debug
             _ <- debugMessageMode.debugMessage(ojisanRepository)
@@ -52,6 +59,6 @@ object Main extends IOApp with LazyLogging {
 
             _ <- IO(logger.info("オジサン準備終わったヨ"))
           } yield ExitCode.Success
-        )
-    }
+//        )
+//    }
 }
