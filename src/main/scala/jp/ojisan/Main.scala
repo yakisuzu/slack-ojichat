@@ -29,29 +29,23 @@ object Main extends IOApp with LazyLogging {
     OjisanKimagureReactionService()(ojisanRepository)
   val ojisanKimagureMessage: OjisanKimagureMessageService =
     OjisanKimagureMessageService()(ojisanRepository, ojichat)
-  val ojisanMentionRequest: OjisanMentionRequestService =
-    OjisanMentionRequestService()(ojisanRepository, ojichat, ec, sc)
 
-  def run(args: List[String]): IO[ExitCode] =
-    F.toIO {
-      EitherT
-        .right(
-          for {
-            // debug
-            _ <- debugMessageMode.debugMessage(ojisanRepository)
+  def run(args: List[String]): IO[ExitCode] = {
+    // 無理にIO[Unit]で取ってるけど、それだめで
+    // unsafeRunSync時点でEitherT[IO, Throwable, Unit]にしたいんですよ
+    val r: IO[Unit] = for {
+      // debug
+      _ <- debugMessageMode.debugMessage(ojisanRepository)
 
-            // オジサンはかまってくれると嬉しい
-            _ <- ojisanMentionMessage.mentionMessage()
+      // オジサンはかまってくれると嬉しい
+      _ <- ojisanMentionMessage.mentionMessage()
 
-            // オジサンはかまいたい
-            _ <- ojisanKimagureReaction.kimagureReaction()
-            _ <- ojisanKimagureMessage.kimagureMessage()
+      // オジサンはかまいたい
+      _ <- ojisanKimagureReaction.kimagureReaction()
+      _ <- ojisanKimagureMessage.kimagureMessage()
 
-            // オジサンはやさしい
-            _ <- ojisanMentionRequest.mentionRequest()
-
-            _ <- IO(logger.info("オジサン準備終わったヨ"))
-          } yield ExitCode.Success
-        )
-    }
+      _ <- IO(logger.info("オジサン準備終わったヨ"))
+    } yield ()
+    EitherT(r.attempt).fold(_ => ExitCode.Error, _ => ExitCode.Success)
+  }
 }

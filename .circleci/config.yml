@@ -22,6 +22,7 @@ jobs:
   heroku_deploy:
     # https://devcenter.heroku.com/articles/container-registry-and-runtime
     environment:
+      DOCKER_BUILDKIT: 1
       # HEROKU_APP_NAME: "in deploy(circleci) setting"
       # HEROKU_API_KEY: "in deploy(circleci) setting"
       # SLACK_TOKEN: "in running(heroku) setting"
@@ -47,7 +48,11 @@ jobs:
 
       - run:
           name: docker build
-          command: docker build -t registry.heroku.com/${HEROKU_APP_NAME}/worker ops
+          command: |
+            docker build \
+              --build-arg HEROKU_APP_NAME="${HEROKU_APP_NAME}" \
+              --build-arg SLACK_TOKEN="${SLACK_TOKEN}" \
+              -t registry.heroku.com/${HEROKU_APP_NAME}/worker ops
       - run:
           name: heroku push
           command: docker push registry.heroku.com/${HEROKU_APP_NAME}/worker
