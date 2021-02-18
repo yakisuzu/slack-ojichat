@@ -57,7 +57,7 @@ https://help.heroku.com/PBGP6IDE/how-should-i-generate-an-api-key-that-allows-me
 `Setting > Name` にてオジサンの名前をつける  
 `HEROKU_APP_NAME` として使う  
 - 設定後  
-![image](https://user-images.githubusercontent.com/2022475/108371284-f17e6d00-7240-11eb-98ea-8045e1b990c4.png)
+![image](https://user-images.githubusercontent.com/2022475/108371284-f17e6d00-7240-11eb-98ea-8045e1b990c4.png)  
 
 ### 5. CircleCIの設定
 - ビルド時の環境変数  
@@ -66,7 +66,7 @@ https://help.heroku.com/PBGP6IDE/how-should-i-generate-an-api-key-that-allows-me
   - `HEROKU_APP_NAME` の登録
   - `SLACK_TOKEN` の登録
 - 設定後  
-![image](https://user-images.githubusercontent.com/2022475/108371497-27bbec80-7241-11eb-82fc-b41d15d5fd3d.png)
+![image](https://user-images.githubusercontent.com/2022475/108371497-27bbec80-7241-11eb-82fc-b41d15d5fd3d.png)  
 - ビルドの有効化  
 masterを元にオジサンがデプロイされる  
 

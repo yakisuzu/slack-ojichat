@@ -41,8 +41,7 @@ jobs:
           key: npm-cache
           paths:
             - node_modules
-      - setup_remote_docker:
-          docker_layer_caching: true
+      - setup_remote_docker
       - attach_workspace:
           at: .
 
