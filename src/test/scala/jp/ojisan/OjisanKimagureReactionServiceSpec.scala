@@ -17,10 +17,12 @@ class OjisanKimagureReactionServiceSpec extends FunSpec with BeforeAndAfterEach 
           onMessageMock = (cb: MessageValue => IO[Unit]) =>
             cb(
               new MessageValue(
+                ts = "1",
                 channel = SlackChannelMock(id = "ch"),
                 timestamp = "1234567",
                 sender = UserValue("", ""),
-                content = ""
+                content = "",
+                threadTs = None
               )
             ),
           addReactionToMessageMock = (channel: SlackChannel, ts: String, emoji: String) =>
@@ -47,10 +49,12 @@ class OjisanKimagureReactionServiceSpec extends FunSpec with BeforeAndAfterEach 
           onMessageMock = (cb: MessageValue => IO[Unit]) =>
             cb(
               new MessageValue(
+                ts = "1",
                 channel = null,
                 timestamp = "",
                 sender = UserValue("ojisanId", ""), // 自分の発言
-                content = ""
+                content = "",
+                threadTs = None
               )
             ),
           addReactionToMessageMock = (_, _, _) => throw new AssertionError("こないで〜〜〜")

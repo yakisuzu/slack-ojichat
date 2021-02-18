@@ -24,10 +24,12 @@ class OjisanKimagureMessageServiceSpec extends FunSpec with BeforeAndAfterEach {
         override def sendMessage(c: SlackChannel, name: String): IO[Unit] = throw new AssertionError("こないで〜〜")
       }
       val m = new MessageValue(
+        ts = "1",
         channel = SlackChannelMock(),
         timestamp = "",
         sender = UserValue("senderId", "senderName"),
-        content = "<@ojisanId> ojisan?"
+        content = "<@ojisanId> ojisan?",
+        threadTs = None
       )
       s.onMessageAction(m) unsafeRunSync
     }
@@ -43,10 +45,12 @@ class OjisanKimagureMessageServiceSpec extends FunSpec with BeforeAndAfterEach {
         override def sendMessage(c: SlackChannel, name: String): IO[Unit] = throw new AssertionError("こないで〜〜")
       }
       val m = new MessageValue(
+        ts = "1",
         channel = SlackChannelMock(),
         timestamp = "",
         sender = UserValue("ojisanId", ""),
-        content = "<@chigauOjisan> ojisan?"
+        content = "<@chigauOjisan> ojisan?",
+        threadTs = None
       )
       s.onMessageAction(m) unsafeRunSync
     }
@@ -62,10 +66,12 @@ class OjisanKimagureMessageServiceSpec extends FunSpec with BeforeAndAfterEach {
         override def sendMessage(c: SlackChannel, name: String): IO[Unit] = throw new AssertionError("こないで〜〜")
       }
       val m = new MessageValue(
+        ts = "1",
         channel = SlackChannelMock(),
         timestamp = "",
         sender = UserValue("senderId", "senderName"),
-        content = "<@chigauOjisan> ojisan?"
+        content = "<@chigauOjisan> ojisan?",
+        threadTs = None
       )
       s.onMessageAction(m) unsafeRunSync
     }
@@ -85,10 +91,12 @@ class OjisanKimagureMessageServiceSpec extends FunSpec with BeforeAndAfterEach {
         }
       }
       val m = new MessageValue(
+        ts = "1",
         channel = SlackChannelMock("channelId"),
         timestamp = "",
         sender = UserValue("senderId", "senderName"),
-        content = "<@chigauOjisan> ojisan?"
+        content = "<@chigauOjisan> ojisan?",
+        threadTs = None
       )
       s.onMessageAction(m) unsafeRunSync
     }

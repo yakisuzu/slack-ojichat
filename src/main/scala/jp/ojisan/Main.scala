@@ -24,11 +24,13 @@ object Main extends IOApp with LazyLogging {
   implicit val sc: ScheduledExecutorService       = Executors.newSingleThreadScheduledExecutor()
 
   val ojisanMentionMessage: OjisanMentionMessageService =
-    OjisanMentionMessageService()(ojisanRepository, ojichat)
+    OjisanMentionMessageService(ojisanRepository, ojichat)
   val ojisanKimagureReaction: OjisanKimagureReactionService =
-    OjisanKimagureReactionService()(ojisanRepository)
+    OjisanKimagureReactionService(ojisanRepository)
   val ojisanKimagureMessage: OjisanKimagureMessageService =
-    OjisanKimagureMessageService()(ojisanRepository, ojichat)
+    OjisanKimagureMessageService(ojisanRepository, ojichat)
+  val ojisanThreadMessage: OjisanThreadMessageService =
+    OjisanThreadMessageService(ojisanRepository, ojichat)
 
   def run(args: List[String]): IO[ExitCode] = {
     // 無理にIO[Unit]で取ってるけど、それだめで
@@ -43,6 +45,9 @@ object Main extends IOApp with LazyLogging {
       // オジサンはかまいたい
       _ <- ojisanKimagureReaction.kimagureReaction()
       _ <- ojisanKimagureMessage.kimagureMessage()
+
+      // オジサンはスレッドでかまいたい
+      _ <- ojisanThreadMessage.alwaysMessage()
 
       _ <- IO(logger.info("オジサン準備終わったヨ"))
     } yield ()

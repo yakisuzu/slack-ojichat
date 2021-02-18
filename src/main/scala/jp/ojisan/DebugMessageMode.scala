@@ -12,6 +12,7 @@ sealed abstract class DebugMessageMode(val printMessage: Boolean) extends LazyLo
     logger.debug(
       Map(
         "ts"                 -> m.timestamp,
+        "threadTs"           -> m.threadTs,
         "channelId"          -> m.channel.getId,
         "channelName"        -> m.channel.getName,
         "senderUserId"       -> m.sender.id,

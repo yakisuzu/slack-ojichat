@@ -4,8 +4,8 @@ import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 
 trait OjisanKimagureReactionService extends LazyLogging {
-  implicit val repository: OjisanRepository
-  implicit val kimagure: KimagureService
+  val repository: OjisanRepository
+  val kimagure: KimagureService
 
   def kimagureReaction(): IO[Unit] =
     repository.onMessage {
@@ -27,11 +27,10 @@ trait OjisanKimagureReactionService extends LazyLogging {
 }
 
 object OjisanKimagureReactionService {
-  def apply()(
-      implicit
+  def apply(
       _repository: OjisanRepository
   ): OjisanKimagureReactionService = new OjisanKimagureReactionService() {
-    override implicit val repository: OjisanRepository = _repository
-    override implicit val kimagure: KimagureService    = KimagureService()
+    override val repository: OjisanRepository = _repository
+    override val kimagure: KimagureService    = KimagureService()
   }
 }

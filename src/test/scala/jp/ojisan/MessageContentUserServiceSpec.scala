@@ -9,7 +9,14 @@ class MessageContentUserServiceSpec extends FunSpec with BeforeAndAfterEach {
 
   describe("contentToUsers") {
     it("userIdが取れる") {
-      val c      = new MessageValue(channel = null, timestamp = "", sender = null, content = "<@dare> <@dore>　oh yeah")
+      val c = new MessageValue(
+        ts = "1",
+        channel = null,
+        timestamp = "",
+        sender = null,
+        content = "<@dare> <@dore>　oh yeah",
+        threadTs = None
+      )
       val actual = MessageContentUserService().contentToUsers(c)
       actual should be(Seq(UserValue("dare", ""), UserValue("dore", "")))
     }

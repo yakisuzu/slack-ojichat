@@ -3,7 +3,7 @@ package jp.ojisan
 import com.ullink.slack.simpleslackapi.SlackChannel
 import com.ullink.slack.simpleslackapi.events.SlackMessagePosted
 
-case class MessageValue(channel: SlackChannel, timestamp: String, sender: UserValue, content: String) {
+case class MessageValue(ts: String, channel: SlackChannel, timestamp: String, sender: UserValue, content: String, threadTs: Option[String]) {
   def hasMention(user: UserValue): Boolean =
     content contains user.id
 
@@ -14,9 +14,11 @@ case class MessageValue(channel: SlackChannel, timestamp: String, sender: UserVa
 object MessageValue {
   def apply(message: SlackMessagePosted): MessageValue =
     MessageValue(
+      ts = message.getTimeStamp,
       channel = message.getChannel,
       timestamp = message.getTimestamp,
       sender = UserValue(message.getSender),
-      content = message.getMessageContent
+      content = message.getMessageContent,
+      threadTs = Option(message.getThreadTimestamp)
     )
 }

@@ -4,8 +4,8 @@ import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 
 trait OjisanMentionMessageService extends LazyLogging {
-  implicit val repository: OjisanRepository
-  implicit val ojichat: OjichatService
+  val repository: OjisanRepository
+  val ojichat: OjichatService
 
   def mentionMessage(): IO[Unit] =
     repository.onMessage {
@@ -21,12 +21,11 @@ trait OjisanMentionMessageService extends LazyLogging {
 }
 
 object OjisanMentionMessageService {
-  def apply()(
-      implicit
+  def apply(
       _repository: OjisanRepository,
       _ojichat: OjichatService
   ): OjisanMentionMessageService = new OjisanMentionMessageService() {
-    override implicit val repository: OjisanRepository = _repository
-    override implicit val ojichat: OjichatService      = _ojichat
+    override val repository: OjisanRepository = _repository
+    override val ojichat: OjichatService      = _ojichat
   }
 }
