@@ -22,7 +22,7 @@ jobs:
   heroku_deploy:
     # https://devcenter.heroku.com/articles/container-registry-and-runtime
     environment:
-      DOCKER_BUILDKIT: 1
+      # DOCKER_BUILDKIT: 1 未対応
       # HEROKU_APP_NAME: "in deploy(circleci) setting"
       # HEROKU_API_KEY: "in deploy(circleci) setting"
       # SLACK_TOKEN: "in running(heroku) setting"
