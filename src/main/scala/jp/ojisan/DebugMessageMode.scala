@@ -27,7 +27,6 @@ object DebugMessageMode {
     case m: String if m == "ON" => new DebugMessageModeOn
     case _                      => new DebugMessageModeOff
   }
-
 }
 
 case class DebugMessageModeOn()  extends DebugMessageMode(true)

@@ -4,6 +4,6 @@
   "author": "yakisuzu",
   "license": "MIT",
   "devDependencies": {
-    "heroku": "^7.26.2"
+    "heroku": "^7.47.12"
   }
 }

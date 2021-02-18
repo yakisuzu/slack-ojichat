@@ -20,8 +20,9 @@
 ![image](https://user-images.githubusercontent.com/2022475/59970549-01ddd080-95a4-11e9-971b-a1c4a220720e.png)  
 たまに煽られる  
 
-### 3. リマインダしてくれる
-TODO 
+### 3. スレッド使うとめっちゃうざい
+オジサンが参加しているチャンネル内で、スレッドを使ってしまうと、
+めちゃくちゃ話しかけてきて、会話が台無しになる
 
 ### ex. 夜は早めに寝てるし、朝はわりと早い
 `06:00 ~ 21:00` がオジサンの活動時間  
@@ -29,14 +30,15 @@ TODO
 
 ## デプロイ
 ### 1. オジサンの名前を決める
-- `HEROKU_APP_NAME` としていろいろ使っていく  
+- `HEROKU_APP_NAME` としていろいろ使います
  
 ### 2. このリポジトリをForkする
 - たぶん  
 
 ### 3. slackの設定
 - APPでbot作成  
-slackのAPPから `Bots` を登録し、 `API Token` を取得する（ `SLACK_TOKEN` ）  
+slackのAPPから `Bots` を登録し、 `API Token` を取得する  
+`SLACK_TOKEN` として使う  
 ![image](https://user-images.githubusercontent.com/2022475/59964888-ef32af80-9541-11e9-80e8-7caf60b668e8.png)  
 - アイコンを設定する  
 これは本質的な設定であり、絶対にスキップしないこと、オジサンにリアルな人間性を与えます  
@@ -45,27 +47,26 @@ slackのAPPから `Bots` を登録し、 `API Token` を取得する（ `SLACK_T
 ### 4. herokuの設定
 - アカウント作成  
 実行環境としてherokuを使っているので、アカウント作成する  
-- API_KEY作成（ `HEROKU_API_KEY` ）  
+- API_KEY作成  
+`HEROKU_API_KEY` として使う  
 https://help.heroku.com/PBGP6IDE/how-should-i-generate-an-api-key-that-allows-me-to-use-the-heroku-platform-api  
 `heroku authorizations:create`  
 - create new app  
 とりあえずappを作る  
 - app nameの設定  
-`Setting > Name` にてオジサンの名前をつける（ `HEROKU_APP_NAME` ）  
-- 実行時の環境変数  
-  - `Setting > Config Vars` に登録する  
-  - `SLACK_TOKEN` の登録  
-  - `HEROKU_APP_NAME` の登録  
+`Setting > Name` にてオジサンの名前をつける  
+`HEROKU_APP_NAME` として使う  
 - 設定後  
-![image](https://user-images.githubusercontent.com/2022475/59964969-3e2d1480-9543-11e9-8ab2-5b2602f492c6.png)  
+![image](https://user-images.githubusercontent.com/2022475/108371284-f17e6d00-7240-11eb-98ea-8045e1b990c4.png)
 
 ### 5. CircleCIの設定
 - ビルド時の環境変数  
   - PROJECT SETTINGSのEnvironment Variables  
-  - `HEROKU_APP_NAME` の登録  
   - `HEROKU_API_KEY` の登録  
+  - `HEROKU_APP_NAME` の登録
+  - `SLACK_TOKEN` の登録
 - 設定後  
-![image](https://user-images.githubusercontent.com/2022475/59964988-77658480-9543-11e9-869a-e2b60d582c93.png)  
+![image](https://user-images.githubusercontent.com/2022475/108371497-27bbec80-7241-11eb-82fc-b41d15d5fd3d.png)
 - ビルドの有効化  
 masterを元にオジサンがデプロイされる  
 
