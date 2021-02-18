@@ -10,10 +10,12 @@ class MessageValueSpec extends FunSpec with BeforeAndAfterEach {
   describe("hasMention") {
     it("メンションあった") {
       val m = new MessageValue(
+        ts = "1",
         channel = null,
         timestamp = "",
         sender = null,
-        content = "<@mentionId>　oh yeah"
+        content = "<@mentionId>　oh yeah",
+        threadTs = None
       )
       val actual = m.hasMention(new UserValue("mentionId", ""))
       actual should be(true)
@@ -21,10 +23,12 @@ class MessageValueSpec extends FunSpec with BeforeAndAfterEach {
 
     it("メンションない") {
       val m = new MessageValue(
+        ts = "1",
         channel = null,
         timestamp = "",
         sender = null,
-        content = "<@mentionId>　oh yeah"
+        content = "<@mentionId>　oh yeah",
+        threadTs = None
       )
       val actual = m.hasMention(new UserValue("chigauId", ""))
       actual should be(false)
@@ -34,10 +38,12 @@ class MessageValueSpec extends FunSpec with BeforeAndAfterEach {
   describe("talkedBy") {
     it("あってた") {
       val m = new MessageValue(
+        ts = "1",
         channel = null,
         timestamp = "",
         sender = UserValue("ojisanId", "ojisan"),
-        content = ""
+        content = "",
+        threadTs = None
       )
       val actual = m.talkedBy(new UserValue("ojisanId", ""))
       actual should be(true)
@@ -45,10 +51,12 @@ class MessageValueSpec extends FunSpec with BeforeAndAfterEach {
 
     it("違うひとだった") {
       val m = new MessageValue(
+        ts = "1",
         channel = null,
         timestamp = "",
         sender = UserValue("ojisanId", "ojisan"),
-        content = ""
+        content = "",
+        threadTs = None
       )
       val actual = m.talkedBy(new UserValue("chigauId", ""))
       actual should be(false)

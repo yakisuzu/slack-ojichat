@@ -7,7 +7,7 @@ import scala.util.matching.Regex
 import scala.util.{Success, Try}
 
 trait MessageContentReservationService {
-  implicit val messageContentUser: MessageContentUserService
+  val messageContentUser: MessageContentUserService
 
   val timeRegex: Regex                 = "[0-2][0-9]:[0-5][0-9]".r
   val timeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
@@ -27,6 +27,6 @@ trait MessageContentReservationService {
 
 object MessageContentReservationService {
   def apply(): MessageContentReservationService = new MessageContentReservationService() {
-    override implicit val messageContentUser: MessageContentUserService = new MessageContentUserService {}
+    override val messageContentUser: MessageContentUserService = new MessageContentUserService {}
   }
 }

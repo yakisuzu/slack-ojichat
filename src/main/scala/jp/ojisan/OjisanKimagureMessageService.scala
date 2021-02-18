@@ -5,9 +5,9 @@ import com.typesafe.scalalogging.LazyLogging
 import com.ullink.slack.simpleslackapi.SlackChannel
 
 trait OjisanKimagureMessageService extends LazyLogging {
-  implicit val repository: OjisanRepository
-  implicit val ojichat: OjichatService
-  implicit val kimagure: KimagureService
+  val repository: OjisanRepository
+  val ojichat: OjichatService
+  val kimagure: KimagureService
 
   def kimagureMessage(): IO[Unit] =
     repository.onMessage(onMessageAction)
@@ -32,13 +32,12 @@ trait OjisanKimagureMessageService extends LazyLogging {
 }
 
 object OjisanKimagureMessageService {
-  def apply()(
-      implicit
+  def apply(
       _repository: OjisanRepository,
       _ojichat: OjichatService
   ): OjisanKimagureMessageService = new OjisanKimagureMessageService() {
-    override implicit val repository: OjisanRepository = _repository
-    override implicit val ojichat: OjichatService      = _ojichat
-    override implicit val kimagure: KimagureService    = KimagureService()
+    override val repository: OjisanRepository = _repository
+    override val ojichat: OjichatService      = _ojichat
+    override val kimagure: KimagureService    = KimagureService()
   }
 }

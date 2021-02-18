@@ -12,16 +12,18 @@ class OjisanMentionMessageServiceSpec extends FunSpec with BeforeAndAfterEach {
   // http://www.scalatest.org/user_guide/using_matchers
   describe("mentionMessage") {
     it("ojisan宛ダヨ") {
-      val s = OjisanMentionMessageService()(
+      val s = OjisanMentionMessageService(
         OjisanRepositoryMock(
           ojisanMock = UserValue("ojisanId", ""),
           onMessageMock = (cb: MessageValue => IO[Unit]) =>
             cb(
               new MessageValue(
+                ts = "1",
                 channel = SlackChannelMock("channelId"),
                 timestamp = "",
                 sender = UserValue("senderId", "senderName"),
-                content = "<@ojisanId> mentionedOjisan"
+                content = "<@ojisanId> mentionedOjisan",
+                threadTs = None
               )
             ),
           sendMessageMock = (c: SlackChannel, m: String) =>
@@ -46,16 +48,18 @@ class OjisanMentionMessageServiceSpec extends FunSpec with BeforeAndAfterEach {
     }
 
     it("ojisan宛じゃないヨ") {
-      val s = OjisanMentionMessageService()(
+      val s = OjisanMentionMessageService(
         OjisanRepositoryMock(
           ojisanMock = UserValue("ojisanId", ""),
           onMessageMock = (cb: MessageValue => IO[Unit]) =>
             cb(
               new MessageValue(
+                ts = "1",
                 channel = SlackChannelMock(),
                 timestamp = "",
                 sender = UserValue("", ""),
-                content = "<@chigauOjisan> ojisan?"
+                content = "<@chigauOjisan> ojisan?",
+                threadTs = None
               )
             ),
           sendMessageMock = (_, _) => throw new AssertionError("こないで〜〜")

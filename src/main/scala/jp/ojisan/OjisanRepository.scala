@@ -4,7 +4,7 @@ import cats.effect.{Async, IO}
 import com.typesafe.scalalogging.LazyLogging
 import com.ullink.slack.simpleslackapi.impl.SlackSessionFactory
 import com.ullink.slack.simpleslackapi.replies.SlackMessageReply
-import com.ullink.slack.simpleslackapi.{SlackChannel, SlackSession}
+import com.ullink.slack.simpleslackapi.{SlackChannel, SlackPreparedMessage, SlackSession}
 
 import scala.collection.JavaConverters._
 
@@ -36,6 +36,16 @@ trait OjisanRepository extends LazyLogging {
   def sendMessage(channel: SlackChannel, m: String): IO[SlackMessageReply] =
     IO {
       session.sendMessage(channel, m).getReply
+    }
+
+  def sendThreadMessage(channel: SlackChannel, parentTs: String, m: String): IO[SlackMessageReply] =
+    IO {
+      val pm: SlackPreparedMessage = new SlackPreparedMessage.Builder()
+        .withThreadTimestamp(parentTs)
+        .withReplyBroadcast(false)
+        .withMessage(m)
+        .build()
+      session.sendMessage(channel, pm).getReply
     }
 
   def helloOjisan(): IO[Unit] =
